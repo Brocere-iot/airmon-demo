@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>MHI AIRGUARD Prototype</title>
+  <style>
+    :root {
+      --bg-dark: #0A1128;
+      --bg-panel: rgba(20, 30, 60, 0.6);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --gold: #D4AF37;
+      --gold-glow: rgba(212, 175, 55, 0.4);
+      --text-main: #FFFFFF;
+      --text-sub: #A0ABC0;
+      --accent-blue: #1E3A8A;
+      --alert-red: #E63946;
+      --success-green: #2A9D8F;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; user-select: none; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: #000; /* 電腦版展示時的背景色 */
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+    }
+
+    /* iPhone 15 Pro Max Mockup Container (430 x 932) */
+    #app-container {
+      width: 100%; max-width: 430px; 
+      height: 100vh; max-height: 932px;
+      background: linear-gradient(135deg, #0A1128 0%, #050814 100%);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    /* 若在電腦或投影幕上展示，自動加上鈦金屬邊框與圓角增加擬真感 */
+    @media (min-width: 431px) {
+      #app-container {
+        border-radius: 48px;
+        border: 6px solid #2c2c2e;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5);
+      }
+    }
+
+    /* --- Top Status Bar --- */
+    .top-bar {
+      /* 頂部增加 59px padding 避開 iPhone 15 Pro Max 的動態島 */
+      padding: 59px 24px 15px; 
+      display: flex; justify-content: space-between; align-items: center;
+      color: var(--text-sub); font-size: 12px; z-index: 10;
+    }
+    
+    .logo-container {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .logo-text {
+      display: flex; flex-direction: column; line-height: 1.1;
+    }
+    .logo-text .zh { color: var(--text-main); font-weight: 700; font-size: 13px; letter-spacing: 1px; }
+    .logo-text .en { color: var(--text-sub); font-size: 7px; font-weight: 600; letter-spacing: 0.5px; }
+    .warning-icon { color: var(--alert-red); animation: blink 1s infinite; display: none; }
+
+    /* --- AIRGUARD Badge --- */
+    .airguard-badge {
+      margin: 0 24px; padding: 10px; border-radius: 20px;
+      background: linear-gradient(90deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%);
+      border: 1px solid var(--gold); color: var(--gold);
+      text-align: center; font-size: 14px; font-weight: 600;
+      box-shadow: 0 0 15px var(--gold-glow); cursor: pointer;
+    }
+
+    /* --- Screens --- */
+    .screen { flex: 1; overflow-y: auto; padding: 10px 24px 120px; display: none; animation: fadeIn 0.3s ease; }
+    .screen.active { display: block; }
+
+    /* --- Screen 1: Home --- */
+    .temp-circle {
+      width: 280px; height: 280px; margin: 15px auto 10px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      position: relative; transition: all 0.3s;
+    }
+    .temp-circle.syncing { animation: pulseSync 1.5s infinite; filter: hue-rotate(180deg); }
+    .room-temp { color: var(--text-sub); font-size: 15px; margin-bottom: 5px; }
+    .set-temp { color: var(--text-main); font-size: 78px; font-weight: 300; line-height: 1; margin-bottom: 10px; }
+    .temp-controls { display: flex; gap: 45px; justify-content: center; margin-bottom: 25px; }
+    .btn-circle {
+      width: 55px; height: 55px; border-radius: 50%; background: var(--bg-panel);
+      border: 1px solid var(--glass-border); color: var(--text-main); font-size: 26px;
+      display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(10px);
+    }
+    .btn-circle:active { background: var(--accent-blue); }
+    .btn-circle.disabled { opacity: 0.3; pointer-events: none; }
+
+    .quick-info-bar {
+      display: flex; justify-content: center; align-items: center; gap: 15px;
+      margin: 0 auto 25px auto; padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
+      border-radius: 20px; backdrop-filter: blur(15px);
+      color: var(--text-main); font-size: 14px; font-weight: 500;
+      width: 95%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .info-divider { width: 1px; height: 16px; background: var(--glass-border); }
+    .info-item { display: flex; align-items: center; gap: 6px; }
+    .info-item span.highlight { color: var(--gold); }
+
+    .powerful-banner {
+      background: linear-gradient(90deg, #1E3A8A, #3A86FF);
+      border-radius: 14px; padding: 14px; margin-bottom: 15px;
+      display: none; justify-content: space-between; align-items: center; color: white; font-size: 15px;
+    }
+
+    .grid-2x3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 25px; }
+    .grid-item {
+      background: var(--bg-panel); border: 1px solid var(--glass-border); border-radius: 18px;
+      padding: 16px 5px; text-align: center; color: var(--text-sub); font-size: 13px;
+      backdrop-filter: blur(10px); cursor: pointer; transition: all 0.3s;
+    }
+    .grid-item.active { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 15px var(--gold-glow); }
+    .grid-item.active-blue { background: rgba(30, 58, 138, 0.5); border-color: #3A86FF; color: white; box-shadow: 0 0 15px rgba(58, 134, 255, 0.4); }
+    .grid-item.active-yellow { background: rgba(244, 162, 97, 0.2); border-color: #F4A261; color: #F4A261; box-shadow: 0 0 15px rgba(244, 162, 97, 0.4); }
+    .grid-item.active-cyan { background: rgba(42, 157, 143, 0.2); border-color: #2A9D8F; color: #2A9D8F; box-shadow: 0 0 15px rgba(42, 157, 143, 0.4); }
+    .grid-icon { font-size: 26px; margin-bottom: 8px; display: block; }
+
+    .bottom-sheet { background: var(--bg-panel); border-radius: 20px; padding: 20px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px); }
+    .section-title { color: var(--text-main); font-size: 15px; margin-bottom: 15px; font-weight: 600; }
+    
+    .scroll-tabs { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 10px; margin-bottom: 10px; }
+    .tab-btn {
+      padding: 10px 18px; border-radius: 20px; border: 1px solid var(--glass-border); color: var(--text-sub);
+      background: transparent; white-space: nowrap; font-size: 15px; cursor: pointer; transition: 0.3s;
+    }
+    .tab-btn.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+
+    /* --- Screen 2 & 3: Details --- */
+    .gauge-container { text-align: center; margin: 40px 0; position: relative; }
+    .gauge-arc { width: 280px; height: 140px; margin: 0 auto; border-top-left-radius: 140px; border-top-right-radius: 140px; border: 18px solid var(--bg-panel); border-bottom: 0; position: relative; overflow: hidden; }
+    .gauge-fill { position: absolute; top: 0; left: 0; width: 280px; height: 140px; border-top-left-radius: 140px; border-top-right-radius: 140px; border: 18px solid var(--gold); border-bottom: 0; transform-origin: bottom center; transform: rotate(-18deg); box-shadow: 0 0 20px var(--gold-glow); }
+    .gauge-score { font-size: 72px; font-weight: 300; color: var(--text-main); margin-top: -45px; }
+    .gauge-sub { color: var(--gold); font-size: 15px; margin-top: 5px; }
+    .alert-card { background: linear-gradient(135deg, rgba(230,57,70,0.2) 0%, rgba(20,30,60,0.6) 100%); border: 1px solid var(--alert-red); border-radius: 18px; padding: 18px; margin-bottom: 25px; }
+    .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .data-card { background: var(--bg-panel); border: 1px solid var(--glass-border); border-radius: 18px; padding: 18px; }
+    .data-card .value { font-size: 26px; color: var(--text-main); margin: 6px 0; }
+    .data-card .status.green { color: var(--success-green); font-size: 13px; }
+
+    /* --- Screen 3: Energy --- */
+    .segmented-control { display: flex; background: var(--bg-panel); border-radius: 12px; padding: 4px; margin-bottom: 25px; }
+    .seg-btn { flex: 1; text-align: center; padding: 10px; color: var(--text-sub); border-radius: 8px; font-size: 15px; transition: 0.3s; cursor:pointer;}
+    .seg-btn.active { background: var(--accent-blue); color: white; font-weight: 600; }
+    .energy-price { font-size: 56px; color: var(--gold); font-weight: 300; text-shadow: 0 0 15px var(--gold-glow); }
+    .schedule-item { background: var(--bg-panel); border-radius: 14px; padding: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--glass-border); }
+    .toggle-switch { width: 48px; height: 26px; background: var(--success-green); border-radius: 13px; position: relative; cursor: pointer; }
+    .toggle-switch::after { content: ''; position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; background: white; border-radius: 50%; }
+
+    /* --- Bottom Navigation --- */
+    .bottom-nav {
+      position: absolute; bottom: 0; width: 100%; height: 95px; /* 加高以避開底線 */
+      background: rgba(10, 17, 40, 0.9); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+      display: flex; justify-content: space-around; align-items: center; 
+      padding-bottom: 34px; padding-top: 12px; z-index: 50; /* 34px 是 iPhone 底部安全區 */
+    }
+    .nav-item { text-align: center; color: var(--text-sub); font-size: 12px; cursor: pointer; transition: 0.3s; flex:1;}
+    .nav-item.active { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+    .nav-icon { font-size: 24px; margin-bottom: 4px; display: block; }
+
+    /* --- Modals & Toasts --- */
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+      display: none; justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal {
+      width: 85%; background: linear-gradient(135deg, rgba(30,58,138,0.9) 0%, rgba(10,17,40,0.95) 100%);
+      border: 1px solid #3A86FF; border-radius: 28px; padding: 30px; text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s;
+    }
+    .modal.show { transform: scale(1); }
+    .modal.alert { background: linear-gradient(135deg, rgba(230,57,70,0.9) 0%, rgba(10,17,40,0.95) 100%); border-color: var(--alert-red); }
+    .modal-btn {
+      width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 17px; font-weight: 600;
+      margin-top: 15px; cursor: pointer;
+    }
+    .btn-primary { background: linear-gradient(90deg, #D4AF37, #F3E5AB); color: #000; }
+    .btn-danger { background: linear-gradient(90deg, #E63946, #F28482); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text-sub); margin-top: 5px; }
+
+    .toast {
+      position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.15); border: 1px solid var(--glass-border);
+      color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px;
+      backdrop-filter: blur(15px); box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200;
+    }
+    .toast.show { opacity: 1; }
+
+    .device-modal {
+      position: absolute; bottom: -100%; left: 0; width: 100%;
+      background: var(--bg-dark); border-top: 1px solid var(--glass-border);
+      border-top-left-radius: 28px; border-top-right-radius: 28px;
+      padding: 30px 24px 50px; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 101; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); color: white;
+    }
+    .device-modal.open { bottom: 0; }
+
+    /* Animations */
+    @keyframes pulseSync { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Secret Demo Triggers */
+    .demo-triggers { position: absolute; top: 0; left: 0; display: flex; opacity: 0; z-index: 999; }
+    .demo-triggers:hover { opacity: 1; }
+    .demo-btn { padding: 10px; font-size: 12px; background: red; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div id="app-container">
+  
+  <div class="demo-triggers">
+    <button class="demo-btn" onclick="showModal('modal-mold')">Demo: 防黴</button>
+    <button class="demo-btn" onclick="showModal('modal-error')">Demo: 報修</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="top-bar">
+    <div class="logo-container">
+      <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,12 66,42 34,42" fill="#E60012"/>
+        <polygon points="31,47 47,77 15,77" fill="#E60012"/>
+        <polygon points="69,47 85,77 53,77" fill="#E60012"/>
+      </svg>
+      <div class="logo-text">
+        <span class="zh">三菱重工空調</span>
+        <span class="en">MITSUBISHI HEAVY INDUSTRIES</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span>📶 -48 dBm</span>
+      <span class="warning-icon" id="top-warning">⚠️ E1</span>
+    </div>
+  </div>
+
+  <div class="airguard-badge" onclick="switchTab('airguard')">
+    🛡️ AIRGUARD 守護中 | 健康度：92 分 〉
+  </div>
+
+  <div id="screen-home" class="screen active">
+    
+    <div class="temp-circle" id="temp-display">
+      <div class="room-temp">室內目前溫度 🌡️ 26°C</div>
+      <div class="set-temp" id="set-temp-val">24.5<span style="font-size: 36px;">°C</span></div>
+      <div style="color: var(--text-sub); font-size: 13px; background: rgba(0,0,0,0.3); padding: 6px 16px; border-radius: 12px;">設定溫度</div>
+    </div>
+
+    <div class="temp-controls">
+      <div class="btn-circle" id="btn-minus" onclick="changeTemp(-0.5)">−</div>
+      <div class="btn-circle" id="btn-plus" onclick="changeTemp(0.5)">+</div>
+    </div>
+
+    <div class="quick-info-bar">
+      <div class="info-item" id="info-mode">❄️ 冷房</div>
+      <div class="info-divider"></div>
+      <div class="info-item">💨 <span id="info-fan" class="highlight">MID</span></div>
+      <div class="info-divider"></div>
+      <div class="info-item">🔃 自動</div>
+    </div>
+
+    <div class="powerful-banner" id="powerful-banner">
+      <div>⚡ 強力運轉中... <span id="countdown">14:59</span></div>
+      <button style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer;" onclick="toggleMode('powerful')">提前關閉</button>
+    </div>
+
+    <div class="grid-2x3">
+      <div class="grid-item" id="btn-energy" onclick="toggleMode('energy')">
+        <span class="grid-icon">🍃</span>節能運轉
+      </div>
+      <div class="grid-item" id="btn-powerful" onclick="toggleMode('powerful')">
+        <span class="grid-icon">⚡</span>強力運轉
+      </div>
+      <div class="grid-item" id="btn-homeleave" onclick="toggleMode('homeleave')">
+        <span class="grid-icon">🏠</span>外出模式
+      </div>
+      <div class="grid-item" id="btn-silent" onclick="toggleSilent()">
+        <span class="grid-icon">🌙</span>室外靜音
+      </div>
+      <div class="grid-item active">
+        <span class="grid-icon">🛡️</span>AIRGUARD
+      </div>
+      <div class="grid-item" onclick="openDeviceMgt()">
+        <span class="grid-icon">⚙️</span>設備管理
+      </div>
+    </div>
+
+    <div class="bottom-sheet">
+      <div class="section-title">❄️ 運轉模式</div>
+      <div class="scroll-tabs" id="mode-tabs">
+        <div class="tab-btn" onclick="setOpMode(this, 'Ⓐ 自動')">Ⓐ 自動</div>
+        <div class="tab-btn active" onclick="setOpMode(this, '❄️ 冷房')">❄️ 冷房</div>
+        <div class="tab-btn" onclick="setOpMode(this, '☀️ 暖房')">☀️ 暖房</div>
+        <div class="tab-btn" onclick="setOpMode(this, '💧 除濕')">💧 除濕</div>
+        <div class="tab-btn" onclick="setOpMode(this, '🌬️ 送風')">🌬️ 送風</div>
+      </div>
+
+      <div class="section-title" style="margin-top: 24px;">💨 風量 <span id="fan-status" style="float: right; color: var(--gold);">MID</span></div>
+      <input type="range" min="1" max="5" value="2" id="fan-slider" style="width: 100%; accent-color: var(--gold); margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-sub);">
+        <span>LOW</span><span>MID</span><span>HI</span><span>PWR</span><span>AUTO</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-airguard" class="screen">
+    <div style="text-align: center; color: var(--text-sub); font-size: 13px; margin-bottom: 10px;">Asset Guardian Center</div>
+    
+    <div class="gauge-container">
+      <div class="gauge-arc"><div class="gauge-fill"></div></div>
+      <div class="gauge-score">92</div>
+      <div class="gauge-sub">動態保固狀態：已延長 +18 個月</div>
+    </div>
+
+    <div class="alert-card">
+      <div style="color: var(--alert-red); font-weight: 600; margin-bottom: 6px; font-size: 15px;">⚠️ 區域環境監測：溫泉硫化區域</div>
+      <div style="color: #F8F9FA; font-size: 14px;">🛡️ AI 守護對策：已自動啟動抗硫化防護流程</div>
+    </div>
+
+    <div class="grid-2x2">
+      <div class="data-card">
+        <div style="font-size: 13px; color: var(--text-sub);">空氣品質 (AQI)</div>
+        <div class="value">18</div>
+        <div class="status green">● 優良</div>
+      </div>
+      <div class="data-card">
+        <div style="font-size: 13px; color: var(--text-sub);">馬達運轉檢測</div>
+        <div class="value">正常</div>
+        <div class="status green">目前 980 RPM</div>
+      </div>
+      <div class="data-card">
+        <div style="font-size: 13px; color: var(--text-sub);">濾網積塵狀況</div>
+        <div class="value">12%</div>
+        <div class="status green">建議 30 天後清潔</div>
+      </div>
+      <div class="data-card">
+        <div style="font-size: 13px; color: var(--text-sub);">冷媒外洩監測</div>
+        <div class="value">安全</div>
+        <div class="status green">無外洩風險</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-data" class="screen">
+    <div class="segmented-control">
+      <div class="seg-btn active" onclick="switchDataTab('energy')">⚡ 能耗分析</div>
+      <div class="seg-btn" onclick="switchDataTab('schedule')">📅 排程管理</div>
+    </div>
+
+    <div id="tab-energy">
+      <div style="text-align:center; margin-bottom:35px;">
+        <div style="color: var(--text-sub); font-size: 15px;">本月總用電：142.6 Wh</div>
+        <div style="font-size: 15px; margin-top: 18px;">預估電費</div>
+        <div class="energy-price">NT$ 513</div>
+      </div>
+      <div class="bottom-sheet" style="height: 220px; display: flex; align-items: flex-end; justify-content: space-around; padding-top: 40px;">
+        <div style="width: 24px; height: 40%; background: var(--accent-blue); border-radius: 6px;"></div>
+        <div style="width: 24px; height: 60%; background: var(--accent-blue); border-radius: 6px;"></div>
+        <div style="width: 24px; height: 30%; background: var(--accent-blue); border-radius: 6px;"></div>
+        <div style="width: 24px; height: 80%; background: var(--gold); border-radius: 6px; box-shadow: 0 0 12px var(--gold-glow);"></div>
+        <div style="width: 24px; height: 50%; background: var(--accent-blue); border-radius: 6px;"></div>
+      </div>
+    </div>
+
+    <div id="tab-schedule" style="display: none;">
+      <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+        <div class="data-card" style="flex: 1; text-align: center; padding: 12px;">
+          <div style="font-size: 12px;">一般定時</div>
+          <div style="font-size: 20px; color: var(--gold);">2 <span style="font-size: 13px; color: var(--text-sub);">/ 8 組</span></div>
+        </div>
+        <div class="data-card" style="flex: 1; text-align: center; padding: 12px;">
+          <div style="font-size: 12px;">週期排程</div>
+          <div style="font-size: 20px; color: var(--gold);">14 <span style="font-size: 13px; color: var(--text-sub);">/ 42 組</span></div>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div>
+          <div style="font-size: 15px; font-weight: 600;">每週二 20:40</div>
+          <div style="font-size: 13px; color: var(--text-sub); margin-top: 6px;">[冷房] 25.5°C [風量: LOW]</div>
+        </div>
+        <div style="display: flex; gap: 18px; align-items: center;">
+          <div class="toggle-switch" onclick="showToast('已切換排程狀態')"></div>
+          <span style="color: var(--alert-red); cursor: pointer;" onclick="showToast('排程已刪除')">🗑️</span>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div>
+          <div style="font-size: 15px; font-weight: 600;">每週一 17:00</div>
+          <div style="font-size: 13px; color: var(--text-sub); margin-top: 6px;">[自動] 26.0°C [風量: MID]</div>
+        </div>
+        <div style="display: flex; gap: 18px; align-items: center;">
+          <div class="toggle-switch" onclick="showToast('已切換排程狀態')"></div>
+          <span style="color: var(--alert-red); cursor: pointer;" onclick="showToast('排程已刪除')">🗑️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home', this)">
+      <span class="nav-icon">🕹️</span>遙控
+    </div>
+    <div class="nav-item" onclick="switchTab('airguard', this)">
+      <span class="nav-icon">🛡️</span>防護
+    </div>
+    <div class="nav-item" onclick="switchTab('data', this)">
+      <span class="nav-icon">📊</span>數據
+    </div>
+  </nav>
+
+  <div class="device-modal" id="device-modal">
+    <div style="display:flex; justify-content:space-between; margin-bottom:25px;">
+      <h3 style="margin:0; font-size:18px;">⚙️ 設備管理</h3>
+      <button style="background:none; border:none; color:var(--text-sub); font-size:28px; cursor:pointer;" onclick="closeDeviceMgt()">×</button>
+    </div>
+    <div style="margin-bottom:18px; font-size:15px; color:var(--text-sub);">設備狀態：<span style="color:var(--success-green); font-weight: 600;">ONLINE</span></div>
+    <div style="margin-bottom:18px; font-size:15px; color:var(--text-sub);">MAC 地址：3C:33:32:C0:0F:5C</div>
+    <div style="margin-bottom:18px; font-size:15px; color:var(--text-sub);">韌體版本：FW 2.0.1 (最新)</div>
+    <hr style="border-color:var(--glass-border); margin:25px 0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; font-size: 15px;">
+      <span>💡 設備指示燈開關</span>
+      <div class="toggle-switch" onclick="showToast('設備指示燈切換完成')" style="cursor:pointer;"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-mold">
+    <div class="modal">
+      <div style="font-size: 44px; margin-bottom: 12px;">💧</div>
+      <div style="color: white; font-size: 22px; font-weight: 600; margin-bottom: 18px;">防黴保養建議</div>
+      <div style="color: var(--text-sub); font-size: 15px; line-height: 1.5; margin-bottom: 25px;">
+        偵測到空調剛結束冷房運轉，為避免機體發霉並維持健康分數，建議執行 30 分鐘防黴乾燥。
+      </div>
+      <button class="modal-btn btn-primary" onclick="hideModal('modal-mold')">✨ 一鍵執行除濕保養</button>
+      <button class="modal-btn btn-ghost" onclick="hideModal('modal-mold')">5 秒後自動執行</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-error">
+    <div class="modal alert">
+      <div style="font-size: 44px; margin-bottom: 12px;">⚠️</div>
+      <div style="color: white; font-size: 22px; font-weight: 600; margin-bottom: 18px;">嚴重故障預警與報修</div>
+      <div style="color: #F8F9FA; font-size: 15px; line-height: 1.5; margin-bottom: 25px; text-align: left;">
+        系統檢測到室內機出現異常低頻異音。<br>
+        <span style="color: #FFB703;">(代碼 E1：馬達軸承磨損率達 85%)</span><br><br>
+        為確保保固權益，AI 已為您準備好原廠維修單。<br>
+        <strong style="font-size: 16px;">📅 預計到府：明日 10:00 AM</strong>
+      </div>
+      <button class="modal-btn btn-danger" onclick="resolveError()">同意並發送原廠報修</button>
+      <button class="modal-btn btn-ghost" onclick="hideModal('modal-error')">自行聯絡</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let baseTemp = 24.5;
+  let baseFan = 2; // MID
+  let currentTemp = 24.5;
+  
+  let currentMode = 'normal'; 
+  let isSilent = false;
+  let syncTimeout = null;
+  const fanLabels = ['LOW', 'MID', 'HI', 'POWERFUL', 'AUTO'];
+
+  // --- Utility & UI ---
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.innerText = msg;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 2500);
+  }
+
+  function updateTempDisplay(val) {
+    document.getElementById('set-temp-val').innerHTML = val.toFixed(1) + '<span style="font-size: 36px;">°C</span>';
+  }
+
+  function simulateApiSync() {
+    const circle = document.getElementById('temp-display');
+    circle.classList.add('syncing');
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => { circle.classList.remove('syncing'); }, 1500);
+  }
+
+  // --- Bottom Operation Mode Change ---
+  function setOpMode(element, modeName) {
+    if(currentMode !== 'normal') return showToast("智慧模式運行中，無法手動變更運轉模式");
+    document.querySelectorAll('#mode-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    document.getElementById('info-mode').innerText = modeName;
+    simulateApiSync();
+  }
+
+  // --- Core Remote Controls ---
+  function changeTemp(delta) {
+    if(currentMode !== 'normal') return showToast("智慧模式運行中，無法手動調溫"); 
+    currentTemp += delta;
+    if(currentTemp > 30) currentTemp = 30;
+    if(currentTemp < 18) currentTemp = 18;
+    baseTemp = currentTemp; 
+    updateTempDisplay(currentTemp);
+    simulateApiSync();
+  }
+
+  document.getElementById('fan-slider').addEventListener('input', function(e) {
+    if(currentMode !== 'normal') return;
+    updateFanUI(e.target.value);
+    baseFan = e.target.value;
+    simulateApiSync();
+  });
+
+  function updateFanUI(val, overrideLabel = null) {
+    const label = overrideLabel || fanLabels[val - 1];
+    document.getElementById('fan-status').innerText = label;
+    document.getElementById('info-fan').innerText = label;
+    if(overrideLabel) {
+      document.getElementById('info-fan').style.color = '#E63946'; 
+    } else {
+      document.getElementById('info-fan').style.color = 'var(--gold)';
+    }
+  }
+
+  // --- Mutually Exclusive Smart Modes Logic ---
+  function clearAllSmartModes() {
+    document.getElementById('btn-energy').classList.remove('active');
+    document.getElementById('btn-powerful').classList.remove('active-blue');
+    document.getElementById('btn-homeleave').classList.remove('active-yellow');
+    document.getElementById('powerful-banner').style.display = 'none';
+    
+    // Unlock UI
+    document.getElementById('fan-slider').disabled = false;
+    document.getElementById('btn-plus').classList.remove('disabled');
+    document.getElementById('btn-minus').classList.remove('disabled');
+  }
+
+  function restoreBaseState() {
+    currentTemp = baseTemp;
+    document.getElementById('fan-slider').value = baseFan;
+    updateFanUI(baseFan);
+    updateTempDisplay(currentTemp);
+  }
+
+  function toggleMode(targetMode) {
+    simulateApiSync();
+
+    if (currentMode === targetMode) {
+      clearAllSmartModes();
+      currentMode = 'normal';
+      restoreBaseState();
+      showToast("已恢復一般手動模式");
+      return;
+    }
+
+    clearAllSmartModes();
+    currentMode = targetMode;
+
+    const slider = document.getElementById('fan-slider');
+    const plusBtn = document.getElementById('btn-plus');
+    const minusBtn = document.getElementById('btn-minus');
+
+    slider.disabled = true;
+    plusBtn.classList.add('disabled');
+    minusBtn.classList.add('disabled');
+
+    if (targetMode === 'energy') {
+      document.getElementById('btn-energy').classList.add('active');
+      currentTemp = 28.0; 
+      updateTempDisplay(currentTemp);
+      updateFanUI(baseFan, 'AUTO (智慧)');
+      showToast("節能運轉啟動：鎖定最佳室溫 28°C");
+      
+    } else if (targetMode === 'powerful') {
+      document.getElementById('btn-powerful').classList.add('active-blue');
+      document.getElementById('powerful-banner').style.display = 'flex';
+      currentTemp = 28.0;
+      slider.value = 3; 
+      updateTempDisplay(currentTemp);
+      updateFanUI(3, 'HI (強制)');
+      showToast("強力運轉啟動：最大風量極速冷卻");
+      
+    } else if (targetMode === 'homeleave') {
+      document.getElementById('btn-homeleave').classList.add('active-yellow');
+      currentTemp = 28.0; 
+      slider.value = 1; 
+      updateTempDisplay(currentTemp);
+      updateFanUI(1, 'LOW (監測)');
+      showToast("外出模式啟動：智慧溫控監測中");
+    }
+  }
+
+  // --- Independent Modes ---
+  function toggleSilent() {
+    isSilent = !isSilent;
+    const btn = document.getElementById('btn-silent');
+    simulateApiSync();
+    if(isSilent) {
+      btn.classList.add('active-cyan');
+      showToast("室外機靜音模式：ON");
+    } else {
+      btn.classList.remove('active-cyan');
+      showToast("室外機靜音模式：OFF");
+    }
+  }
+
+  function openDeviceMgt() { document.getElementById('device-modal').classList.add('open'); }
+  function closeDeviceMgt() { document.getElementById('device-modal').classList.remove('open'); }
+
+  // --- Navigation & Modals ---
+  function switchTab(tabId, element = null) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + tabId).classList.add('active');
+    if(element) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      element.classList.add('active');
+    }
+  }
+
+  function switchDataTab(subTab) {
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-energy').style.display = subTab === 'energy' ? 'block' : 'none';
+    document.getElementById('tab-schedule').style.display = subTab === 'schedule' ? 'block' : 'none';
+  }
+
+  function showModal(id) { 
+    document.getElementById(id).style.display = 'flex'; 
+    setTimeout(() => { document.getElementById(id).querySelector('.modal').classList.add('show'); }, 10); 
+  }
+  
+  function hideModal(id) { 
+    document.getElementById(id).querySelector('.modal').classList.remove('show'); 
+    setTimeout(() => { document.getElementById(id).style.display = 'none'; }, 300); 
+  }
+  
+  function resolveError() {
+    hideModal('modal-error');
+    document.getElementById('top-warning').style.display = 'inline'; 
+    showToast("工單已發送至 MHI Server");
+  }
+</script>
+</body>
+</html>
