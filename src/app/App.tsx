@@ -34,6 +34,7 @@ export default function App() {
   const [newScheduleTemp, setNewScheduleTemp] = useState(26);
   const [newScheduleFan, setNewScheduleFan] = useState('MID');
   const [notification, setNotification] = useState<{ title: string; body: string } | null>(null);
+  const [isAdjusting, setIsAdjusting] = useState(false);
 
   // 自動關閉通知
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function App() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Thermometer className="w-5 h-5 text-[#E1B36C]" />
-              <span className="text-[#A1A1AA] font-bold" style={{ fontSize: '14px' }}>ROOM TEMPERATURE</span>
+              <span className="text-[#A1A1AA] font-bold" style={{ fontSize: '14px' }}>室內溫度</span>
             </div>
             <div className="text-[#FFFFFF] font-bold" style={{ fontSize: '28px', textShadow: '0 0 20px rgba(255,255,255,0.3)' }}>26<span className="text-[#A1A1AA] text-lg ml-1">°C</span></div>
           </div>
@@ -95,29 +96,47 @@ export default function App() {
           {/* Temperature Wheel */}
           <div className="relative flex items-center justify-center py-8">
             {/* Glow */}
-            <div className="absolute inset-0 bg-[#0A78F5]/10 blur-[50px] rounded-full"></div>
+            <div className="absolute inset-0 bg-[#E1B36C]/15 blur-[60px] rounded-full"></div>
 
             <button
-              onClick={() => setTemperature(Math.max(16, temperature - 0.5))}
-              className="relative z-10 w-14 h-14 bg-white/5 border border-white/20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:border-[#0A78F5]/50"
+              onClick={() => {
+                const next = Math.max(16, temperature - 0.5);
+                if (next !== temperature) {
+                  setTemperature(next);
+                  setIsAdjusting(true);
+                  setTimeout(() => setIsAdjusting(false), 300);
+                }
+              }}
+              className="relative z-10 w-14 h-14 bg-white/5 border border-white/20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:border-[#E1B36C]/50"
             >
               <Minus className="w-6 h-6 text-white" strokeWidth={2} />
             </button>
 
             <div className="mx-6 relative">
-              <div className="w-44 h-44 rounded-full border border-white/10 flex items-center justify-center shadow-[inset_0_0_30px_rgba(10,120,245,0.2)] bg-radial from-[#121930] to-transparent">
-                <div className="absolute inset-0 rounded-full border-2 border-t-[#E1B36C] border-r-transparent border-b-transparent border-l-transparent animate-spin-slow"></div>
+              <div className={`w-44 h-44 rounded-full border flex items-center justify-center transition-all duration-300 ease-out bg-radial from-[#121930] to-transparent ${
+                isAdjusting 
+                  ? 'border-[#E1B36C]/60 scale-105 shadow-[0_0_50px_rgba(225,179,108,0.4),inset_0_0_40px_rgba(225,179,108,0.25)]' 
+                  : 'border-[#E1B36C]/30 scale-100 shadow-[0_0_40px_rgba(225,179,108,0.25),inset_0_0_30px_rgba(225,179,108,0.15)]'
+              }`}>
+                <div className="absolute inset-0 rounded-full border-[3px] border-t-[#E1B36C] border-r-transparent border-b-transparent border-l-transparent animate-spin-slow" style={{ filter: 'drop-shadow(0 0 12px rgba(225, 179, 108, 0.9))' }}></div>
                 <div className="text-center">
-                  <div className="text-[#A1A1AA] font-bold mb-1" style={{ fontSize: '12px', letterSpacing: '0.1em' }}>TARGET</div>
+                  <div className="text-[#A1A1AA] font-bold mb-1" style={{ fontSize: '12px', letterSpacing: '0.1em' }}>設定溫度</div>
                   <div className="text-[#FFFFFF] font-bold" style={{ fontSize: '64px', lineHeight: '1', textShadow: '0 0 30px rgba(255,255,255,0.4)' }}>{temperature}</div>
-                  <div className="text-[#E1B36C] font-bold mt-1" style={{ fontSize: '18px' }}>CELSIUS</div>
+                  <div className="text-[#E1B36C] font-bold mt-1" style={{ fontSize: '18px' }}>°C</div>
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => setTemperature(Math.min(30, temperature + 0.5))}
-              className="relative z-10 w-14 h-14 bg-white/5 border border-white/20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:border-[#0A78F5]/50"
+              onClick={() => {
+                const next = Math.min(30, temperature + 0.5);
+                if (next !== temperature) {
+                  setTemperature(next);
+                  setIsAdjusting(true);
+                  setTimeout(() => setIsAdjusting(false), 300);
+                }
+              }}
+              className="relative z-10 w-14 h-14 bg-white/5 border border-white/20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:border-[#E1B36C]/50"
             >
               <Plus className="w-6 h-6 text-white" strokeWidth={2} />
             </button>
@@ -135,7 +154,7 @@ export default function App() {
           <div className="h-6 w-px bg-white/10"></div>
           <div className="flex items-center gap-2">
             <Wind className="w-5 h-5 text-[#E1B36C]" />
-            <span className="text-[#FFFFFF] font-bold" style={{ fontSize: '14px' }}>FAN: {operationModes[activeOperationMode].getLabel(fanSpeed)}</span>
+            <span className="text-[#FFFFFF] font-bold" style={{ fontSize: '14px' }}>風力: {operationModes[activeOperationMode].getLabel(fanSpeed)}</span>
           </div>
           <div className="h-6 w-px bg-white/10"></div>
           <div className="flex items-center gap-2">
@@ -232,7 +251,7 @@ export default function App() {
       {/* Operation Drawer */}
       <div className="mb-6">
         <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
-          <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>OPERATION MODE</h3>
+          <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>操作模式</h3>
 
           {/* Mode Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -256,7 +275,7 @@ export default function App() {
           {/* Fan Speed Slider */}
           <div>
             <div className="flex justify-between items-center mb-3">
-              <span className="text-[#A1A1AA] font-bold" style={{ fontSize: '14px' }}>FAN SPEED</span>
+              <span className="text-[#A1A1AA] font-bold" style={{ fontSize: '14px' }}>風速</span>
               <span className="text-[#0A78F5] font-bold" style={{ fontSize: '16px', filter: 'drop-shadow(0 0 5px #0A78F5)' }}>
                 {operationModes[activeOperationMode].getLabel(fanSpeed)}
               </span>
@@ -291,12 +310,29 @@ export default function App() {
   const renderGuardTab = () => (
     <>
       {/* Health Gauge */}
+      <style>{`
+        @keyframes drawGauge {
+          from { stroke-dashoffset: 251.2; }
+          to { stroke-dashoffset: 25.12; }
+        }
+        @keyframes barGrow {
+          from { height: 0; opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes glowPulse {
+          0%, 100% { filter: drop-shadow(0 0 5px rgba(225, 179, 108, 0.4)); }
+          50% { filter: drop-shadow(0 0 15px rgba(225, 179, 108, 0.8)); }
+        }
+        .animate-gauge {
+          animation: drawGauge 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
       <div className="mb-6">
         <div className="relative bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden">
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#0A78F5]/10 blur-[80px] rounded-full"></div>
 
           <div className="relative text-center">
-            <h3 className="text-[#A1A1AA] font-bold mb-8" style={{ fontSize: '14px', letterSpacing: '0.2em' }}>HEALTH SCORE</h3>
+            <h3 className="text-[#A1A1AA] font-bold mb-8" style={{ fontSize: '14px', letterSpacing: '0.2em' }}>健康分數</h3>
 
             {/* Semi-circular gauge */}
             <div className="relative w-64 h-32 mx-auto mb-8">
@@ -312,27 +348,30 @@ export default function App() {
                   d="M 20 90 A 80 80 0 0 1 180 90"
                   fill="none"
                   stroke="url(#gaugeGradient)"
-                  strokeWidth="12"
+                  strokeWidth="14"
                   strokeLinecap="round"
                   strokeDasharray="251.2"
-                  strokeDashoffset="25.12"
+                  strokeDashoffset="251.2"
+                  className="animate-gauge"
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(225, 179, 108, 0.6))' }}
                 />
                 <defs>
                   <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#0A78F5" />
+                    <stop offset="0%" stopColor="#E1B36C" />
+                    <stop offset="50%" stopColor="#FFF5E6" />
                     <stop offset="100%" stopColor="#E1B36C" />
                   </linearGradient>
                 </defs>
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center translate-y-3">
-                <div className="text-[#FFFFFF] font-bold" style={{ fontSize: '72px', lineHeight: '1', textShadow: '0 0 40px rgba(225,179,108,0.5)' }}>92</div>
+              <div className="absolute inset-0 flex items-center justify-center translate-y-3 transition-all duration-1000 delay-500">
+                <div className="text-[#FFFFFF] font-bold animate-[pulse_2s_infinite]" style={{ fontSize: '72px', lineHeight: '1', textShadow: '0 0 40px rgba(225,179,108,0.5)' }}>92</div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="text-[#A1A1AA] font-medium" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>WARRANTY STATUS</div>
+              <div className="text-[#A1A1AA] font-medium" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>動態保固狀態</div>
               <div className="text-[#E1B36C] font-bold flex items-center justify-center gap-2" style={{ fontSize: '16px', filter: 'drop-shadow(0 0 10px #E1B36C)' }}>
-                <Shield className="w-4 h-4" /> EXTENDED +18 MONTHS
+                <Shield className="w-4 h-4" /> 已延長保固+18個月
               </div>
             </div>
           </div>
@@ -386,7 +425,7 @@ export default function App() {
 
       {/* Sensor Grid */}
       <div className="mb-6">
-        <h3 className="text-[#A1A1AA] font-bold mb-3 px-1" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>SENSORS</h3>
+        <h3 className="text-[#A1A1AA] font-bold mb-3 px-1" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>即時監測</h3>
         <div className="grid grid-cols-2 gap-4">
           {/* Air Quality */}
           <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
@@ -397,7 +436,7 @@ export default function App() {
             <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>18</div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-[#0A78F5] animate-pulse"></div>
-              <span className="text-[#0A78F5]" style={{ fontSize: '11px' }}>EXCELLENT</span>
+              <span className="text-[#0A78F5]" style={{ fontSize: '11px' }}>極佳</span>
             </div>
           </div>
 
@@ -410,7 +449,7 @@ export default function App() {
             <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>980</div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-[#E1B36C] animate-pulse"></div>
-              <span className="text-[#E1B36C]" style={{ fontSize: '11px' }}>NOMINAL</span>
+              <span className="text-[#E1B36C]" style={{ fontSize: '11px' }}>正常</span>
             </div>
           </div>
 
@@ -421,7 +460,7 @@ export default function App() {
               <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>濾網積塵率</span>
             </div>
             <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>12<span className="text-sm ml-1">%</span></div>
-            <div className="text-[#E1B36C]" style={{ fontSize: '11px' }}>HEALTHY</div>
+            <div className="text-[#E1B36C]" style={{ fontSize: '11px' }}>健康</div>
           </div>
 
           {/* Refrigerant Monitor */}
@@ -430,8 +469,8 @@ export default function App() {
               <CheckCircle2 className="w-4 h-4 text-[#0A78F5]" />
               <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>冷媒系統壓力</span>
             </div>
-            <div className="text-[#0A78F5] font-bold mb-1" style={{ fontSize: '20px' }}>SECURE</div>
-            <div className="text-white/30" style={{ fontSize: '10px' }}>NO LEAKS DETECTED</div>
+            <div className="text-[#0A78F5] font-bold mb-1" style={{ fontSize: '20px' }}>安全</div>
+            <div className="text-white/30" style={{ fontSize: '10px' }}>無異常</div>
           </div>
         </div>
       </div>
@@ -464,7 +503,7 @@ export default function App() {
         {/* Device Management */}
         <div className="mb-6">
           <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
-            <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>DEVICE INFO</h3>
+            <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>設備管理</h3>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -499,7 +538,7 @@ export default function App() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#E1B36C]/5 blur-[60px] rounded-full"></div>
 
             <div className="relative">
-              <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>ENERGY ANALYSIS</h3>
+              <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>電量分析</h3>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
@@ -520,7 +559,7 @@ export default function App() {
         {/* Weekly Chart */}
         <div className="mb-6">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 shadow-2xl">
-            <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px' }}>WEEKLY USAGE</h3>
+            <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px' }}>每週使用量</h3>
 
             <div className="h-40 flex items-end justify-between gap-2">
               {[
@@ -535,8 +574,8 @@ export default function App() {
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2">
                   <div className="w-full relative group">
                     <div
-                      className="w-full bg-gradient-to-t from-[#0A78F5] to-transparent rounded-t-sm transition-all group-hover:from-[#E1B36C] group-hover:shadow-[0_0_15px_#E1B36C]"
-                      style={{ height: `${data.value * 1.2}px` }}
+                      className="w-full bg-gradient-to-t from-[#0A78F5] to-transparent rounded-t-sm transition-all group-hover:from-[#E1B36C] group-hover:shadow-[0_0_15px_#E1B36C] animate-[barGrow_0.8s_ease-out_both]"
+                      style={{ height: `${data.value * 1.2}px`, animationDelay: `${idx * 100}ms` }}
                     ></div>
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="bg-white text-black px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">
@@ -853,7 +892,7 @@ export default function App() {
                       <Shield className="w-5 h-5 text-[#0A78F5]" />
                       <div className="absolute inset-0 bg-[#0A78F5]/20 blur-md rounded-full"></div>
                     </div>
-                    <span className="text-[#A1A1AA] font-bold tracking-wide" style={{ fontSize: '13px' }}>AIRGUARD ACTIVE</span>
+                    <span className="text-[#A1A1AA] font-bold tracking-wide" style={{ fontSize: '13px' }}>AIRGUARD 智慧守護中</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="h-6 w-px bg-white/10"></div>
