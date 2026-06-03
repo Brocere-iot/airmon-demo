@@ -60,11 +60,11 @@ export default function App() {
   };
 
   const operationModes = [
-    { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 60, tempDefault: 26,   ticks: ['AUTO', 'LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 60 ? 'MID' : v < 85 ? 'HIGH' : 'AUTO' },
-    { icon: <Snowflake className="w-5 h-5" />, label: '冷房',   fanDefault: 80, tempDefault: 24,   ticks: ['LOW', 'MID', 'HIGH'],          getLabel: (v: number) => v < 30 ? 'LOW' : v < 65 ? 'MID' : 'HIGH' },
-    { icon: <Sun className="w-5 h-5" />, label: '暖房',   fanDefault: 55, tempDefault: 30,   ticks: ['LOW', 'MID', 'HIGH'],          getLabel: (v: number) => v < 30 ? 'LOW' : v < 65 ? 'MID' : 'HIGH' },
-    { icon: <Droplets className="w-5 h-5" />, label: '除濕',   fanDefault: 20, tempDefault: 27,   ticks: ['LOW', 'MID'],                  getLabel: (v: number) => v < 50 ? 'LOW' : 'MID' },
-    { icon: <Wind className="w-5 h-5" />, label: '送風',  fanDefault: 50, tempDefault: 26,   ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 60 ? 'MID' : v < 85 ? 'HIGH' : 'AUTO' },
+    { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 60, tempDefault: 26, ticks: ['AUTO', 'LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 60 ? 'MID' : v < 85 ? 'HIGH' : 'AUTO' },
+    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 80, tempDefault: 24, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 65 ? 'MID' : 'HIGH' },
+    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 55, tempDefault: 30, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 65 ? 'MID' : 'HIGH' },
+    { icon: <Droplets className="w-5 h-5" />, label: '除濕', fanDefault: 20, tempDefault: 27, ticks: ['LOW', 'MID'], getLabel: (v: number) => v < 50 ? 'LOW' : 'MID' },
+    { icon: <Wind className="w-5 h-5" />, label: '送風', fanDefault: 50, tempDefault: 26, ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 60 ? 'MID' : v < 85 ? 'HIGH' : 'AUTO' },
   ];
 
   const renderTabContent = () => {
@@ -113,11 +113,10 @@ export default function App() {
             </button>
 
             <div className="mx-6 relative">
-              <div className={`w-44 h-44 rounded-full border flex items-center justify-center transition-all duration-300 ease-out bg-radial from-[#121930] to-transparent ${
-                isAdjusting 
-                  ? 'border-[#E1B36C]/60 scale-105 shadow-[0_0_50px_rgba(225,179,108,0.4),inset_0_0_40px_rgba(225,179,108,0.25)]' 
+              <div className={`w-44 h-44 rounded-full border flex items-center justify-center transition-all duration-300 ease-out bg-radial from-[#121930] to-transparent ${isAdjusting
+                  ? 'border-[#E1B36C]/60 scale-105 shadow-[0_0_50px_rgba(225,179,108,0.4),inset_0_0_40px_rgba(225,179,108,0.25)]'
                   : 'border-[#E1B36C]/30 scale-100 shadow-[0_0_40px_rgba(225,179,108,0.25),inset_0_0_30px_rgba(225,179,108,0.15)]'
-              }`}>
+                }`}>
                 <div className="absolute inset-0 rounded-full border-[3px] border-t-[#E1B36C] border-r-transparent border-b-transparent border-l-transparent animate-spin-slow" style={{ filter: 'drop-shadow(0 0 12px rgba(225, 179, 108, 0.9))' }}></div>
                 <div className="text-center">
                   <div className="text-[#A1A1AA] font-bold mb-1" style={{ fontSize: '12px', letterSpacing: '0.1em' }}>設定溫度</div>
@@ -171,11 +170,10 @@ export default function App() {
           {/* Eco Mode */}
           <button
             onClick={() => { setEcoMode(!ecoMode); if (!ecoMode) setPowerMode(false); }}
-            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${
-              ecoMode
+            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${ecoMode
                 ? 'bg-[#0A78F5]/20 border-[#0A78F5] shadow-[0_0_20px_rgba(10,120,245,0.3)]'
                 : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
-            }`}
+              }`}
           >
             <div className="flex flex-col items-center gap-3">
               <Leaf className={`w-10 h-10 ${ecoMode ? 'text-[#0A78F5] drop-shadow-[0_0_10px_rgba(10,120,245,0.5)]' : 'text-white/40'}`} />
@@ -189,11 +187,10 @@ export default function App() {
           {/* Power Mode */}
           <button
             onClick={() => { setPowerMode(!powerMode); if (!powerMode) setEcoMode(false); }}
-            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${
-              powerMode
+            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${powerMode
                 ? 'bg-[#E1B36C]/20 border-[#E1B36C] shadow-[0_0_20px_rgba(225,179,108,0.3)]'
                 : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
-            }`}
+              }`}
           >
             <div className="flex flex-col items-center gap-3">
               <Zap className={`w-10 h-10 ${powerMode ? 'text-[#E1B36C] drop-shadow-[0_0_10px_rgba(225,179,108,0.5)]' : 'text-white/40'}`} />
@@ -213,11 +210,10 @@ export default function App() {
           {/* Away Mode */}
           <button
             onClick={() => setAwayMode(!awayMode)}
-            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${
-              awayMode
+            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${awayMode
                 ? 'bg-[#E1B36C]/20 border-[#E1B36C] shadow-[0_0_20px_rgba(225,179,108,0.3)]'
                 : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
-            }`}
+              }`}
           >
             <div className="flex flex-col items-center gap-3">
               <Home className={`w-10 h-10 transition-all ${awayMode ? 'text-[#E1B36C] drop-shadow-[0_0_8px_rgba(225,179,108,0.8)]' : 'text-white/60'}`} />
@@ -231,11 +227,10 @@ export default function App() {
           {/* Outdoor Quiet */}
           <button
             onClick={() => setOutdoorQuiet(!outdoorQuiet)}
-            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${
-              outdoorQuiet
+            className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${outdoorQuiet
                 ? 'bg-[#0A78F5]/20 border-[#0A78F5] shadow-[0_0_20px_rgba(10,120,245,0.3)]'
                 : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
-            }`}
+              }`}
           >
             <div className="flex flex-col items-center gap-3">
               <Moon className={`w-10 h-10 ${outdoorQuiet ? 'text-[#0A78F5] drop-shadow-[0_0_10px_rgba(10,120,245,0.5)]' : 'text-white/40'}`} />
@@ -259,11 +254,10 @@ export default function App() {
               <button
                 key={idx}
                 onClick={() => { setActiveOperationMode(idx); setFanSpeed(mode.fanDefault); setTemperature(mode.tempDefault); }}
-                className={`flex-shrink-0 px-5 py-3 rounded-2xl font-bold transition-all active:scale-95 ${
-                  activeOperationMode === idx
+                className={`flex-shrink-0 px-5 py-3 rounded-2xl font-bold transition-all active:scale-95 ${activeOperationMode === idx
                     ? 'bg-[#0A78F5] text-white shadow-[0_0_15px_rgba(10,120,245,0.5)]'
                     : 'bg-white/10 text-white/70 hover:bg-white/15'
-                }`}
+                  }`}
                 style={{ fontSize: '14px' }}
               >
                 <span className="inline-block mr-1.5">{mode.icon}</span>
@@ -755,8 +749,8 @@ export default function App() {
 
                   <div className="flex gap-3">
                     <button
-                      onClick={() => { 
-                        setShowRepairModal(false); 
+                      onClick={() => {
+                        setShowRepairModal(false);
                         setNotification({ title: '報修申請成功', body: '工單編號：MR-2026-0602，預計 2 個工作天內回覆。' });
                       }}
                       className="flex-1 bg-red-500/80 hover:bg-red-500 text-white rounded-2xl py-3 font-bold transition-all active:scale-95 text-xs"
@@ -804,8 +798,8 @@ export default function App() {
 
                   <div className="flex gap-3">
                     <button
-                      onClick={() => { 
-                        setShowMoldModal(false); 
+                      onClick={() => {
+                        setShowMoldModal(false);
                         setNotification({ title: '保養啟動', body: '防霉保養已啟動，預計執行時間：30 分鐘。' });
                       }}
                       className="flex-1 bg-emerald-500/80 hover:bg-emerald-500 text-white rounded-2xl py-3 font-bold transition-all active:scale-95 text-xs"
@@ -835,29 +829,100 @@ export default function App() {
                     <div className="text-white font-bold flex items-center gap-2 text-base"><Calendar className="w-5 h-5" /> 新增排程</div>
                     <button onClick={() => setShowAddSchedule(false)} className="text-white/40 hover:text-white/70 transition-colors text-xl">×</button>
                   </div>
-                  <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                    <div>
-                      <div className="text-[#A1A1AA] mb-2 text-xs">重複日</div>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {weekDays.map(d => (
-                          <button
-                            key={d}
-                            onClick={() => setNewScheduleDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])}
-                            className={`flex-1 min-w-[50px] py-2 rounded-xl font-bold transition-all text-[10px] ${newScheduleDays.includes(d) ? 'bg-[#E1B36C] text-[#121930]' : 'bg-white/5 text-white/40'}`}
-                          >
-                            {d.replace('週', '')}
-                          </button>
-                        ))}
-                      </div>
+                  {/* Day selector */}
+                  <div className="mb-5">
+                    <div className="text-white/60 mb-2" style={{ fontSize: '13px' }}>重複日</div>
+                    <div className="flex gap-2">
+                      {weekDays.map(d => (
+                        <button
+                          key={d}
+                          onClick={() => setNewScheduleDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])}
+                          className={`flex-1 py-2 rounded-xl font-bold transition-all ${newScheduleDays.includes(d) ? 'bg-[#D4AF37] text-black' : 'bg-white/10 text-white/50'}`}
+                          style={{ fontSize: '11px' }}
+                        >
+                          {d.replace('週', '')}
+                        </button>
+                      ))}
                     </div>
-                    <button
-                      onClick={handleAddSchedule}
-                      disabled={newScheduleDays.length === 0}
-                      className={`w-full py-4 rounded-2xl font-bold transition-all active:scale-95 text-sm ${newScheduleDays.length > 0 ? 'bg-[#0A78F5] text-white shadow-[0_0_20px_rgba(10,120,245,0.4)]' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}
-                    >
-                      確認新增
-                    </button>
+                    {newScheduleDays.length === 0 && <div className="text-red-400 mt-1" style={{ fontSize: '11px' }}>請選擇至少一天</div>}
                   </div>
+
+                  {/* Time */}
+                  <div className="mb-5">
+                    <div className="text-white/60 mb-2" style={{ fontSize: '13px' }}>時間</div>
+                    <input
+                      type="time"
+                      value={newScheduleTime}
+                      onChange={(e) => setNewScheduleTime(e.target.value)}
+                      className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white font-bold"
+                      style={{ fontSize: '16px', colorScheme: 'dark' }}
+                    />
+                  </div>
+
+                  {/* Mode */}
+                  <div className="mb-5">
+                    <div className="text-white/60 mb-2" style={{ fontSize: '13px' }}>運轉模式</div>
+                    <div className="flex gap-2 flex-wrap">
+                      {['自動', '冷房', '暖房', '除濕', '送風'].map(m => (
+                        <button
+                          key={m}
+                          onClick={() => setNewScheduleMode(m)}
+                          className={`px-4 py-2 rounded-xl font-bold transition-all ${newScheduleMode === m ? 'bg-[#D4AF37]/80 text-white' : 'bg-white/10 text-white/50'}`}
+                          style={{ fontSize: '13px' }}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Temp */}
+                  <div className="mb-5">
+                    <div className="text-white/60 mb-2" style={{ fontSize: '13px' }}>設定溫度</div>
+                    <div className="flex items-center justify-between gap-4">
+                      <button
+                        onClick={() => setNewScheduleTemp(prev => Math.max(16, prev - 0.5))}
+                        className="w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/30 rounded-full flex items-center justify-center transition-all active:scale-95"
+                      >
+                        <Minus className="w-5 h-5 text-white" strokeWidth={3} />
+                      </button>
+                      <div className="text-white font-bold text-center" style={{ fontSize: '36px' }}>
+                        {newScheduleTemp}<span className="text-[#D4AF37]" style={{ fontSize: '20px' }}>°C</span>
+                      </div>
+                      <button
+                        onClick={() => setNewScheduleTemp(prev => Math.min(30, prev + 0.5))}
+                        className="w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/30 rounded-full flex items-center justify-center transition-all active:scale-95"
+                      >
+                        <Plus className="w-5 h-5 text-white" strokeWidth={3} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Fan */}
+                  <div className="mb-6">
+                    <div className="text-white/60 mb-2" style={{ fontSize: '13px' }}>風量</div>
+                    <div className="flex gap-2">
+                      {['LOW', 'MID', 'HIGH', 'AUTO'].map(f => (
+                        <button
+                          key={f}
+                          onClick={() => setNewScheduleFan(f)}
+                          className={`flex-1 py-2 rounded-xl font-bold transition-all ${newScheduleFan === f ? 'bg-[#D4AF37]/80 text-white' : 'bg-white/10 text-white/50'}`}
+                          style={{ fontSize: '12px' }}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Confirmation Button */}
+                  <button
+                    onClick={handleAddSchedule}
+                    disabled={newScheduleDays.length === 0}
+                    className={`w-full py-4 rounded-2xl font-bold transition-all active:scale-95 ${newScheduleDays.length > 0 ? 'bg-[#D4AF37]/80 text-white shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-white/10 text-white/20 cursor-not-allowed'}`}
+                    style={{ fontSize: '15px' }}
+                  >
+                    確認新增
+                  </button>
                 </div>
               </div>
             )}
@@ -911,11 +976,10 @@ export default function App() {
                 <div className="grid grid-cols-3 p-3">
                   <button
                     onClick={() => setActiveTab('remote')}
-                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${
-                      activeTab === 'remote'
+                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${activeTab === 'remote'
                         ? 'text-[#E1B36C]'
                         : 'text-white/30 hover:bg-white/5'
-                    }`}
+                      }`}
                   >
                     {activeTab === 'remote' && <div className="absolute top-0 w-8 h-1 bg-[#E1B36C] rounded-full shadow-[0_0_10px_#E1B36C]"></div>}
                     <Smartphone className={`w-7 h-7 relative z-10 ${activeTab === 'remote' ? 'text-[#E1B36C]' : ''}`} strokeWidth={2.5} />
@@ -926,11 +990,10 @@ export default function App() {
 
                   <button
                     onClick={() => setActiveTab('guard')}
-                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${
-                      activeTab === 'guard'
+                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${activeTab === 'guard'
                         ? 'text-[#E1B36C]'
                         : 'text-white/30 hover:bg-white/5'
-                    }`}
+                      }`}
                   >
                     {activeTab === 'guard' && <div className="absolute top-0 w-8 h-1 bg-[#E1B36C] rounded-full shadow-[0_0_10px_#E1B36C]"></div>}
                     <Shield className={`w-7 h-7 relative z-10 ${activeTab === 'guard' ? 'text-[#E1B36C]' : ''}`} strokeWidth={2.5} />
@@ -941,11 +1004,10 @@ export default function App() {
 
                   <button
                     onClick={() => setActiveTab('dashboard')}
-                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${
-                      activeTab === 'dashboard'
+                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${activeTab === 'dashboard'
                         ? 'text-[#E1B36C]'
                         : 'text-white/30 hover:bg-white/5'
-                    }`}
+                      }`}
                   >
                     {activeTab === 'dashboard' && <div className="absolute top-0 w-8 h-1 bg-[#E1B36C] rounded-full shadow-[0_0_10px_#E1B36C]"></div>}
                     <BarChart3 className={`w-7 h-7 relative z-10 ${activeTab === 'dashboard' ? 'text-[#E1B36C]' : ''}`} strokeWidth={2.5} />
