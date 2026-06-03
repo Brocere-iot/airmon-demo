@@ -172,11 +172,11 @@ export default function App() {
             onClick={() => { setEcoMode(!ecoMode); if (!ecoMode) setPowerMode(false); }}
             className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${ecoMode
                 ? 'bg-[#0A78F5]/20 border-[#0A78F5] shadow-[0_0_20px_rgba(10,120,245,0.3)]'
-                : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
+                : 'bg-[#121930]/70 border-white/10'
               }`}
           >
             <div className="flex flex-col items-center gap-3">
-              <Leaf className={`w-10 h-10 ${ecoMode ? 'text-[#0A78F5] drop-shadow-[0_0_10px_rgba(10,120,245,0.5)]' : 'text-white/40'}`} />
+              <Leaf className={`w-10 h-10 ${ecoMode ? 'text-[#0A78F5] drop-shadow-[0_0_12px_rgba(10,120,245,0.55)]' : 'text-[#0A78F5] drop-shadow-[0_0_10px_rgba(10,120,245,0.35)]'}`} />
               <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>節能運轉</div>
               <div className={`w-12 h-6 rounded-full transition-all ${ecoMode ? 'bg-[#0A78F5]' : 'bg-white/10'}`}>
                 <div className={`w-5 h-5 mt-0.5 rounded-full bg-white transition-all ${ecoMode ? 'ml-6' : 'ml-0.5'}`}></div>
@@ -189,11 +189,11 @@ export default function App() {
             onClick={() => { setPowerMode(!powerMode); if (!powerMode) setEcoMode(false); }}
             className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${powerMode
                 ? 'bg-[#E1B36C]/20 border-[#E1B36C] shadow-[0_0_20px_rgba(225,179,108,0.3)]'
-                : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
+                : 'bg-[#121930]/70 border-white/10'
               }`}
           >
             <div className="flex flex-col items-center gap-3">
-              <Zap className={`w-10 h-10 ${powerMode ? 'text-[#E1B36C] drop-shadow-[0_0_10px_rgba(225,179,108,0.5)]' : 'text-white/40'}`} />
+              <Zap className={`w-10 h-10 ${powerMode ? 'text-[#E1B36C] drop-shadow-[0_0_12px_rgba(225,179,108,0.55)]' : 'text-[#E1B36C] drop-shadow-[0_0_10px_rgba(225,179,108,0.35)]'}`} />
               <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>強力運轉</div>
               {powerMode ? (
                 <div className="bg-white/20 px-3 py-1 rounded-full">
@@ -212,11 +212,11 @@ export default function App() {
             onClick={() => setAwayMode(!awayMode)}
             className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${awayMode
                 ? 'bg-[#E1B36C]/20 border-[#E1B36C] shadow-[0_0_20px_rgba(225,179,108,0.3)]'
-                : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
+                : 'bg-[#121930]/70 border-white/10'
               }`}
           >
             <div className="flex flex-col items-center gap-3">
-              <Home className={`w-10 h-10 transition-all ${awayMode ? 'text-[#E1B36C] drop-shadow-[0_0_8px_rgba(225,179,108,0.8)]' : 'text-white/60'}`} />
+              <Home className={`w-10 h-10 transition-all ${awayMode ? 'text-[#E1B36C] drop-shadow-[0_0_12px_rgba(225,179,108,0.55)]' : 'text-[#E1B36C] drop-shadow-[0_0_10px_rgba(225,179,108,0.35)]'}`} />
               <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>外出模式</div>
               <div className={`w-12 h-6 rounded-full transition-all ${awayMode ? 'bg-[#E1B36C]' : 'bg-white/10'}`}>
                 <div className={`w-5 h-5 mt-0.5 rounded-full bg-white transition-all ${awayMode ? 'ml-6' : 'ml-0.5'}`}></div>
@@ -229,11 +229,11 @@ export default function App() {
             onClick={() => setOutdoorQuiet(!outdoorQuiet)}
             className={`backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 ${outdoorQuiet
                 ? 'bg-[#0A78F5]/20 border-[#0A78F5] shadow-[0_0_20px_rgba(10,120,245,0.3)]'
-                : 'bg-[#121930]/70 border-white/5 grayscale opacity-60'
+                : 'bg-[#121930]/70 border-white/10'
               }`}
           >
             <div className="flex flex-col items-center gap-3">
-              <Moon className={`w-10 h-10 ${outdoorQuiet ? 'text-[#0A78F5] drop-shadow-[0_0_10px_rgba(10,120,245,0.5)]' : 'text-white/40'}`} />
+              <Moon className={`w-10 h-10 ${outdoorQuiet ? 'text-[#0A78F5] drop-shadow-[0_0_12px_rgba(10,120,245,0.55)]' : 'text-[#0A78F5] drop-shadow-[0_0_10px_rgba(10,120,245,0.35)]'}`} />
               <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>室外靜音</div>
               <div className={`w-12 h-6 rounded-full transition-all ${outdoorQuiet ? 'bg-[#0A78F5]' : 'bg-white/10'}`}>
                 <div className={`w-5 h-5 mt-0.5 rounded-full bg-white transition-all ${outdoorQuiet ? 'ml-6' : 'ml-0.5'}`}></div>
@@ -249,12 +249,12 @@ export default function App() {
           <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>操作模式</h3>
 
           {/* Mode Tabs */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             {operationModes.map((mode, idx) => (
               <button
                 key={idx}
                 onClick={() => { setActiveOperationMode(idx); setFanSpeed(mode.fanDefault); setTemperature(mode.tempDefault); }}
-                className={`flex-shrink-0 px-5 py-3 rounded-2xl font-bold transition-all active:scale-95 ${activeOperationMode === idx
+                className={`px-4 py-3 rounded-2xl font-bold transition-all active:scale-95 text-center ${activeOperationMode === idx
                     ? 'bg-[#0A78F5] text-white shadow-[0_0_15px_rgba(10,120,245,0.5)]'
                     : 'bg-white/10 text-white/70 hover:bg-white/15'
                   }`}
@@ -322,14 +322,14 @@ export default function App() {
         }
       `}</style>
       <div className="mb-6">
-        <div className="relative bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#0A78F5]/10 blur-[80px] rounded-full"></div>
+        <div className="relative bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-visible">
+          <div className="pointer-events-none absolute -top-14 -left-8 w-40 h-40 bg-[#0A78F5]/10 blur-[80px] rounded-full"></div>
 
           <div className="relative text-center">
-            <h3 className="text-[#A1A1AA] font-bold mb-8" style={{ fontSize: '14px', letterSpacing: '0.2em' }}>健康分數</h3>
+            <h3 className="text-[#A1A1AA] font-bold mb-3" style={{ fontSize: '14px', letterSpacing: '0.2em' }}>健康分數</h3>
 
             {/* Semi-circular gauge */}
-            <div className="relative w-64 h-32 mx-auto mb-8">
+            <div className="w-64 h-48 mx-auto mb-8">
               <svg viewBox="0 0 200 100" className="w-full h-full">
                 <path
                   d="M 20 90 A 80 80 0 0 1 180 90"

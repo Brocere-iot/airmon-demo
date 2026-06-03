@@ -18,6 +18,9 @@ function figmaAssetResolver() {
 
 export default defineConfig({
   base: '/airmon-demo/',
+  server: {
+    allowedHosts: true
+  },
 
   plugins: [
     figmaAssetResolver(),
