@@ -22,7 +22,7 @@ export default function App() {
   const [isRepairing, setIsRepairing] = useState(false);
 
   // 即時監測數據
-  const [pm25, setPm25] = useState(18);
+  const [co2, setCo2] = useState(400);
   const [dustRate, setDustRate] = useState(12);
   const [rpm, setRpm] = useState(980);
 
@@ -69,7 +69,7 @@ export default function App() {
   // 即時監測數據更新
   useEffect(() => {
     const interval = setInterval(() => {
-      setPm25(prev => Math.max(5, Math.min(45, prev + (Math.random() * 4 - 2))));
+      setCo2(prev => Math.max(300, Math.min(500, prev + (Math.random() * 10 - 5))));
       setRpm(prev => Math.max(900, Math.min(1100, prev + Math.floor(Math.random() * 20 - 10))));
     }, 800);
     return () => clearInterval(interval);
@@ -115,11 +115,11 @@ export default function App() {
   };
 
   const operationModes = [
-    { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 60, tempDefault: 26, ticks: ['AUTO', 'LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 60 ? 'MID' : v < 85 ? 'HIGH' : 'AUTO' },
-    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 80, tempDefault: 24, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 65 ? 'MID' : 'HIGH' },
-    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 55, tempDefault: 30, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 65 ? 'MID' : 'HIGH' },
-    { icon: <Droplets className="w-5 h-5" />, label: '除濕', fanDefault: 20, tempDefault: 27, ticks: ['LOW', 'MID'], getLabel: (v: number) => v < 50 ? 'LOW' : 'MID' },
-    { icon: <Wind className="w-5 h-5" />, label: '送風', fanDefault: 50, tempDefault: 26, ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? 'LOW' : v < 60 ? 'MID' : v < 85 ? 'HIGH' : 'AUTO' },
+    { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 60, tempDefault: 26, ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? '弱' : v < 60 ? '中' : v < 85 ? '強' : 'AI' },
+    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 80, tempDefault: 24, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? '弱' : v < 65 ? '中' : '強' },
+    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 55, tempDefault: 30, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? '弱' : v < 65 ? '中' : '強' },
+    { icon: <Droplets className="w-5 h-5" />, label: '除濕', fanDefault: 20, tempDefault: 27, ticks: ['LOW', 'MID'], getLabel: (v: number) => v < 50 ? '弱' : '中' },
+    { icon: <Wind className="w-5 h-5" />, label: '送風', fanDefault: 50, tempDefault: 26, ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? '弱' : v < 60 ? '中' : v < 85 ? '強' : 'AI' },
   ];
 
   const renderTabContent = () => {
@@ -300,13 +300,13 @@ export default function App() {
                 <button
                   key={idx}
                   onClick={() => { setActiveOperationMode(idx); setFanSpeed(operationModes[idx].fanDefault); setTemperature(operationModes[idx].tempDefault); }}
-                  className={`px-4 py-4 rounded-2xl font-bold transition-all active:scale-95 text-center flex flex-col items-center gap-1 ${activeOperationMode === idx
+                  className={`px-4 py-4 rounded-2xl font-bold transition-all active:scale-95 text-center flex items-center justify-center ${activeOperationMode === idx
                     ? 'bg-[#0A78F5] text-white shadow-[0_0_15px_rgba(10,120,245,0.5)]'
                     : 'bg-white/10 text-white/70 hover:bg-white/15'
                     }`}
-                  style={{ fontSize: '13px' }}
+                  style={{ fontSize: '14px' }}
                 >
-                  {operationModes[idx].icon}
+                  <span className="inline-block mr-1.5">{operationModes[idx].icon}</span>
                   {operationModes[idx].label}
                 </button>
               ))}
@@ -351,6 +351,7 @@ export default function App() {
   const renderGuardTab = () => {
     const currentHealthScore = Math.floor(92 - (dustRate - 12) * 0.5);
     const dashOffset = 251.2 * (1 - currentHealthScore / 100);
+    const currentWarranty = Math.max(0, Math.floor(18 - (92 - currentHealthScore) * 0.6));
 
     return (
     <>
@@ -411,7 +412,7 @@ export default function App() {
             <div className="space-y-2">
               <div className="text-[#A1A1AA] font-medium" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>動態保固狀態</div>
               <div className="text-[#E1B36C] font-bold flex items-center justify-center gap-2" style={{ fontSize: '16px', filter: 'drop-shadow(0 0 10px #E1B36C)' }}>
-                <Shield className="w-4 h-4" /> 已延長保固+18個月
+                <Shield className="w-4 h-4" /> 已延長保固+{currentWarranty}個月
               </div>
             </div>
           </div>
@@ -465,9 +466,9 @@ export default function App() {
           <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Wind className="w-4 h-4 text-[#0A78F5]" />
-              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>空氣品質 PM2.5</span>
+              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>空氣品質 CO2</span>
             </div>
-            <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{pm25.toFixed(0)}</div>
+            <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{co2.toFixed(0)}<span className="text-xs ml-1 font-normal opacity-50">ppm</span></div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-[#0A78F5] animate-pulse"></div>
               <span className="text-[#0A78F5]" style={{ fontSize: '11px' }}>極佳</span>
@@ -501,7 +502,7 @@ export default function App() {
           <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-[#0A78F5]" />
-              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>冷媒系統壓力</span>
+              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>冷媒狀態</span>
             </div>
             <div className="text-[#0A78F5] font-bold mb-1" style={{ fontSize: '20px' }}>安全</div>
             <div className="text-white/30" style={{ fontSize: '10px' }}>無異常</div>
@@ -1013,12 +1014,12 @@ export default function App() {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="absolute bottom-0 left-0 right-0 pb-8">
-              <div className="mx-5 bg-[#121930]/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl">
-                <div className="grid grid-cols-3 p-3">
+            <div className="absolute bottom-0 left-0 right-0">
+              <div className="bg-[#0D121F]/95 backdrop-blur-3xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                <div className="grid grid-cols-3 px-4 pt-2 pb-4">
                   <button
                     onClick={() => setActiveTab('remote')}
-                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${activeTab === 'remote'
+                    className={`relative flex flex-col items-center gap-1 py-2 rounded-2xl transition-all active:scale-95 ${activeTab === 'remote'
                       ? 'text-[#E1B36C]'
                       : 'text-white/30 hover:bg-white/5'
                       }`}
@@ -1032,7 +1033,7 @@ export default function App() {
 
                   <button
                     onClick={() => setActiveTab('guard')}
-                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${activeTab === 'guard'
+                    className={`relative flex flex-col items-center gap-1 py-2 rounded-2xl transition-all active:scale-95 ${activeTab === 'guard'
                       ? 'text-[#E1B36C]'
                       : 'text-white/30 hover:bg-white/5'
                       }`}
@@ -1046,7 +1047,7 @@ export default function App() {
 
                   <button
                     onClick={() => setActiveTab('dashboard')}
-                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-all active:scale-95 ${activeTab === 'dashboard'
+                    className={`relative flex flex-col items-center gap-1 py-2 rounded-2xl transition-all active:scale-95 ${activeTab === 'dashboard'
                       ? 'text-[#E1B36C]'
                       : 'text-white/30 hover:bg-white/5'
                       }`}
@@ -1060,9 +1061,6 @@ export default function App() {
                 </div>
               </div>
             </div>
-
-            {/* iOS Home Indicator */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full"></div>
           </div>
         </div>
       </div>
