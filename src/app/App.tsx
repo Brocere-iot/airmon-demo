@@ -10,10 +10,7 @@ import {
 
 export default function App() {
   const [temperature, setTemperature] = useState(24.5);
-  const [powerMode, setPowerMode] = useState(false);
-  const [ecoMode, setEcoMode] = useState(false);
-  const [outdoorQuiet, setOutdoorQuiet] = useState(true);
-  const [fanSpeed, setFanSpeed] = useState(50);
+  const [fanSpeed, setFanSpeed] = useState(1);
   const [activeTab, setActiveTab] = useState('remote');
   const [ledEnabled, setLedEnabled] = useState(true);
   const [activeOperationMode, setActiveOperationMode] = useState(0);
@@ -80,16 +77,17 @@ export default function App() {
     if (activeTab === 'guard') {
       const duration = 10000; // 10 seconds
       const startTime = Date.now();
+      const startVal = dustRate;
+      const targetVal = 45;
+      if (startVal >= targetVal) return;
+
       const interval = setInterval(() => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // 從 12% 升到 45%
-        setDustRate(12 + (33 * progress));
+        setDustRate(startVal + ((targetVal - startVal) * progress));
         if (progress >= 1) clearInterval(interval);
       }, 100);
       return () => clearInterval(interval);
-    } else {
-      setDustRate(12); // 切回別頁時重置
     }
   }, [activeTab]);
 
@@ -115,11 +113,11 @@ export default function App() {
   };
 
   const operationModes = [
-    { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 60, tempDefault: 26, ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? '弱' : v < 60 ? '中' : v < 85 ? '強' : 'AI' },
-    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 80, tempDefault: 24, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? '弱' : v < 65 ? '中' : '強' },
-    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 55, tempDefault: 30, ticks: ['LOW', 'MID', 'HIGH'], getLabel: (v: number) => v < 30 ? '弱' : v < 65 ? '中' : '強' },
-    { icon: <Droplets className="w-5 h-5" />, label: '除濕', fanDefault: 20, tempDefault: 27, ticks: ['LOW', 'MID'], getLabel: (v: number) => v < 50 ? '弱' : '中' },
-    { icon: <Wind className="w-5 h-5" />, label: '送風', fanDefault: 50, tempDefault: 26, ticks: ['LOW', 'MID', 'HIGH', 'AUTO'], getLabel: (v: number) => v < 30 ? '弱' : v < 60 ? '中' : v < 85 ? '強' : 'AI' },
+    { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 3, tempDefault: 26, ticks: ['弱', '中', '強', '自動'], getLabel: (v: number) => ['弱', '中', '強', 'AI'][v] },
+    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 2, tempDefault: 24, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
+    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 1, tempDefault: 30, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
+    { icon: <Droplets className="w-5 h-5" />, label: '除濕', fanDefault: 0, tempDefault: 27, ticks: ['弱', '中'], getLabel: (v: number) => ['弱', '中'][v] },
+    { icon: <Wind className="w-5 h-5" />, label: '送風', fanDefault: 1, tempDefault: 26, ticks: ['弱', '中', '強', '自動'], getLabel: (v: number) => ['弱', '中', '強', 'AI'][v] },
   ];
 
   const renderTabContent = () => {
@@ -325,13 +323,14 @@ export default function App() {
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#0A78F5] to-[#E1B36C] rounded-full transition-all shadow-[0_0_10px_#0A78F5]"
-                  style={{ width: `${fanSpeed}%` }}
+                  style={{ width: `${(fanSpeed / (operationModes[activeOperationMode].ticks.length - 1)) * 100}%` }}
                 ></div>
               </div>
               <input
                 type="range"
                 min="0"
-                max="100"
+                max={operationModes[activeOperationMode].ticks.length - 1}
+                step="1"
                 value={fanSpeed}
                 onChange={(e) => setFanSpeed(Number(e.target.value))}
                 className="absolute top-0 left-0 w-full h-3 opacity-0 cursor-pointer"
@@ -970,29 +969,26 @@ export default function App() {
               </div>
             )}
 
-            {/* Dynamic Island Space */}
-            <div className="h-12 flex items-center justify-center">
-              {/* <div className="w-32 h-9 bg-black rounded-full"></div> */}
+            {/* Status Bar Space */}
+            {/* Status Bar Space / Dynamic Island Area */}
+            <div className="h-12 bg-[#041432]"></div>
+            {/* Top Bar Header - Fixed */}
+            <div className="sticky top-0 z-[60] flex items-center justify-between px-6 py-3 bg-[#041432] border-b border-white/5 shadow-md">
+              <div className="flex items-center gap-2">
+                <img src={airmonLogo} alt="AIRMON" className="h-7 object-contain" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                {isRepairing && (
+                  <div className="px-3 py-1.5 bg-[#F87171]/20 border border-[#F87171]/30 rounded-full flex items-center gap-1.5 animate-pulse">
+                    <AlertTriangle className="w-3.5 h-3.5 text-[#F87171]" />
+                    <span className="text-[#F87171] font-bold" style={{ fontSize: '9px', letterSpacing: '0.05em' }}>報修中</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-5 pb-32">
-
-              {/* Top Bar Status */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <img src={airmonLogo} alt="AIRMON" className="h-7 object-contain" />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {isRepairing && (
-                    <div className="px-3 py-1.5 bg-[#F87171]/20 border border-[#F87171]/30 rounded-full flex items-center gap-1.5 animate-pulse">
-                      <AlertTriangle className="w-3.5 h-3.5 text-[#F87171]" />
-                      <span className="text-[#F87171] font-bold" style={{ fontSize: '9px', letterSpacing: '0.05em' }}>報修中</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-24">
               {/* Compact Status Banner - Only in Remote Tab */}
               <div className="mb-6">
                 {activeTab === 'remote' && (
