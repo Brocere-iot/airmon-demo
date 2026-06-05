@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import airmonLogo from '../assets/airmon_logo.png';
 import {
   Power, Plus, Minus, Wind, Settings, AlertTriangle,
@@ -112,6 +112,56 @@ export default function App() {
     setShowAddSchedule(false);
   };
 
+  // --- Airflow Background Enhancement Logic ---
+  const airflowConfig = useMemo(() => {
+    const isEco = ecoActive;
+    const isHeat = activeOperationMode === 2;
+
+    const colors = isEco
+      ? ['#4CAF50', '#81C784', '#E8F5E9']
+      : isHeat
+        ? ['#FFB74D', '#FF9800', '#FFE0B2']
+        : ['#4FC3F7', '#81D4FA', '#E1F5FE'];
+
+    const hexToRgba = (hex: string, alpha: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    const glow = hexToRgba(colors[1], 0.15);
+    const animation = isHeat ? 'heatFlow' : 'jetStrike';
+
+    let level = fanSpeed;
+    if (fanSpeed === 3) { // AUTO mode: Determine strength from temp difference
+      const diff = Math.abs(26 - temperature); // Room temp is 26°C
+      level = diff >= 4 ? 2 : diff >= 2 ? 1 : 0;
+    }
+    const fan = [
+      { dur: [14, 16], op: [0.12, 0.20], cnt: 8 },  // LOW
+      { dur: [9, 11], op: [0.18, 0.30], cnt: 12 },  // MEDIUM
+      { dur: [4, 6], op: [0.25, 0.45], cnt: 18 },   // HIGH
+    ][Math.min(level, 2)];
+
+    return { colors, glow, animation, fan };
+  }, [ecoActive, activeOperationMode, fanSpeed, temperature]);
+
+  const streakObjects = useMemo(() => {
+    const total = 20; // 根據風速調整氣流條數量，最高可達 20 條
+    return Array.from({ length: total }).map((_, i) => ({
+      id: i,
+      // 規律垂直分佈：從 -20% 到 100%
+      top: `${(i / total) * 120 - 20}%`,
+      durScale: Math.random(),
+      width: `${500 + Math.random() * 200}px`,
+      opScale: Math.random(),
+    }));
+  }, []);
+
+  // 動態主題顏色：暖房用暖黃，其餘(自動、冷房、除濕、送風)用藍色
+  const themeColor = activeOperationMode === 2 ? '#E1B36C' : '#0A78F5';
+
   const operationModes = [
     { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 3, tempDefault: 26, ticks: ['弱', '中', '強', '自動'], getLabel: (v: number) => ['弱', '中', '強', 'AI'][v] },
     { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 2, tempDefault: 24, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
@@ -137,10 +187,10 @@ export default function App() {
     <>
       {/* Central Temperature Control */}
       <div className="mb-6">
-        <div className="relative bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-[0_0_40px_rgba(10,120,245,0.1)]">
+        <div className="relative bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-[0_0_40px_rgba(10,120,245,0.1)]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Thermometer className="w-5 h-5 text-[#E1B36C]" />
+              <Thermometer className="w-5 h-5" style={{ color: themeColor }} />
               <span className="text-[#A1A1AA] font-bold" style={{ fontSize: '14px' }}>室內溫度</span>
             </div>
             <div className="text-[#FFFFFF] font-bold" style={{ fontSize: '28px', textShadow: '0 0 20px rgba(255,255,255,0.3)' }}>26<span className="text-[#A1A1AA] text-lg ml-1">°C</span></div>
@@ -149,7 +199,7 @@ export default function App() {
           {/* Temperature Wheel */}
           <div className="relative flex items-center justify-center py-8">
             {/* Glow */}
-            <div className="absolute inset-0 bg-[#E1B36C]/15 blur-[60px] rounded-full"></div>
+            <div className="absolute inset-0 blur-[60px] rounded-full" style={{ backgroundColor: `${themeColor}26` }}></div>
 
             <button
               onClick={() => {
@@ -161,20 +211,25 @@ export default function App() {
                 }
               }}
               className="relative z-10 w-14 h-14 bg-white/5 border border-white/20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:border-[#E1B36C]/50"
+              style={{ borderColor: isAdjusting ? `${themeColor}80` : '' }}
             >
               <Minus className="w-6 h-6 text-white" strokeWidth={2} />
             </button>
 
             <div className="mx-6 relative">
-              <div className={`w-44 h-44 rounded-full border flex items-center justify-center transition-all duration-300 ease-out bg-radial from-[#121930] to-transparent ${isAdjusting
-                ? 'border-[#E1B36C]/60 scale-105 shadow-[0_0_50px_rgba(225,179,108,0.4),inset_0_0_40px_rgba(225,179,108,0.25)]'
-                : 'border-[#E1B36C]/30 scale-100 shadow-[0_0_40px_rgba(225,179,108,0.25),inset_0_0_30px_rgba(225,179,108,0.15)]'
-                }`}>
-                <div className="absolute inset-0 rounded-full border-[3px] border-t-[#E1B36C] border-r-transparent border-b-transparent border-l-transparent animate-spin-slow" style={{ filter: 'drop-shadow(0 0 12px rgba(225, 179, 108, 0.9))' }}></div>
+              <div
+                className="w-44 h-44 rounded-full border flex items-center justify-center transition-all duration-300 ease-out bg-radial from-[#121930] to-transparent"
+                style={{
+                  borderColor: isAdjusting ? `${themeColor}99` : `${themeColor}4d`,
+                  transform: isAdjusting ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: isAdjusting ? `0 0 50px ${themeColor}66, inset 0 0 40px ${themeColor}40` : `0 0 40px ${themeColor}40, inset 0 0 30px ${themeColor}26`
+                }}
+              >
+                <div className="absolute inset-0 rounded-full border-[3px] border-r-transparent border-b-transparent border-l-transparent animate-spin-slow" style={{ borderTopColor: themeColor, filter: `drop-shadow(0 0 12px ${themeColor}e6)` }}></div>
                 <div className="text-center">
                   <div className="text-[#A1A1AA] font-bold mb-1" style={{ fontSize: '12px', letterSpacing: '0.1em' }}>設定溫度</div>
                   <div className="text-[#FFFFFF] font-bold" style={{ fontSize: '64px', lineHeight: '1', textShadow: '0 0 30px rgba(255,255,255,0.4)' }}>{temperature}</div>
-                  <div className="text-[#E1B36C] font-bold mt-1" style={{ fontSize: '18px' }}>°C</div>
+                  <div className="font-bold mt-1" style={{ fontSize: '18px', color: themeColor }}>°C</div>
                 </div>
               </div>
             </div>
@@ -189,6 +244,7 @@ export default function App() {
                 }
               }}
               className="relative z-10 w-14 h-14 bg-white/5 border border-white/20 rounded-full flex items-center justify-center transition-all active:scale-90 hover:border-[#E1B36C]/50"
+              style={{ borderColor: isAdjusting ? `${themeColor}80` : '' }}
             >
               <Plus className="w-6 h-6 text-white" strokeWidth={2} />
             </button>
@@ -198,7 +254,7 @@ export default function App() {
 
       {/* Quick Status */}
       <div className="mb-6">
-        <div className="bg-[#121930]/70 backdrop-blur-xl border-l-4 border-l-[#0A78F5] border-y border-r border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between shadow-lg">
+        <div className="bg-[#121930]/10 backdrop-blur-xl border-l-4 border-l-[#0A78F5] border-y border-r border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between shadow-lg">
           <div className="flex-1 flex items-center justify-center gap-2">
             <div className="text-[#0A78F5] drop-shadow-[0_0_8px_rgba(10,120,245,0.8)]">{operationModes[activeOperationMode].icon}</div>
             <span className="text-[#FFFFFF] font-bold" style={{ fontSize: '14px' }}>{operationModes[activeOperationMode].label} 模式</span>
@@ -219,8 +275,8 @@ export default function App() {
           <button
             onClick={() => { setEcoActive(!ecoActive); if (!ecoActive) setPowerActive(false); }}
             className={`h-32 backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 flex flex-col items-center justify-center ${ecoActive
-              ? 'bg-[#10B981]/20 border-[#10B981] shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-              : 'bg-[#121930]/70 border-white/10'
+              ? 'bg-[#10B981]/10 border-[#10B981] shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+              : 'bg-[#121930]/10 border-white/10'
               }`}
           >
             <Leaf className={`w-10 h-10 mb-2 ${ecoActive ? 'text-[#10B981] drop-shadow-[0_0_12px_rgba(16,185,129,0.55)]' : 'text-[#10B981]'}`} />
@@ -231,8 +287,8 @@ export default function App() {
           <button
             onClick={() => { setPowerActive(!powerActive); setPowerTimer(899); if (!powerActive) setEcoActive(false); }}
             className={`h-32 backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 flex flex-col items-center justify-center ${powerActive
-              ? 'bg-[#E1B36C]/20 border-[#E1B36C] shadow-[0_0_20px_rgba(225,179,108,0.3)]'
-              : 'bg-[#121930]/70 border-white/10'
+              ? 'bg-[#E1B36C]/10 border-[#E1B36C] shadow-[0_0_20px_rgba(225,179,108,0.3)]'
+              : 'bg-[#121930]/10 border-white/10'
               }`}
           >
             <div className="relative w-10 h-10 mb-2">
@@ -248,8 +304,8 @@ export default function App() {
           <button
             onClick={() => setAwayActive(!awayActive)}
             className={`h-32 backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 flex flex-col items-center justify-center ${awayActive
-              ? 'bg-[#0A78F5]/20 border-[#0A78F5] shadow-[0_0_20px_rgba(10,120,245,0.3)]'
-              : 'bg-[#121930]/70 border-white/10'
+              ? 'bg-[#0A78F5]/10 border-[#0A78F5] shadow-[0_0_20px_rgba(10,120,245,0.3)]'
+              : 'bg-[#121930]/10 border-white/10'
               }`}
           >
             <Home className={`w-10 h-10 mb-2 transition-all ${awayActive ? 'text-[#0A78F5] drop-shadow-[0_0_12px_rgba(10,120,245,0.55)]' : 'text-[#0A78F5]'}`} />
@@ -260,8 +316,8 @@ export default function App() {
           <button
             onClick={() => setQuietActive(!quietActive)}
             className={`h-32 backdrop-blur-xl border rounded-2xl p-5 transition-all active:scale-95 border-t-2 flex flex-col items-center justify-center ${quietActive
-              ? 'bg-[#A855F7]/20 border-[#A855F7] shadow-[0_0_20px_rgba(168,85,247,0.3)]'
-              : 'bg-[#121930]/70 border-white/10'
+              ? 'bg-[#A855F7]/10 border-[#A855F7] shadow-[0_0_20px_rgba(168,85,247,0.3)]'
+              : 'bg-[#121930]/10 border-white/10'
               }`}
           >
             <Moon className={`w-10 h-10 mb-2 ${quietActive ? 'text-[#A855F7] drop-shadow-[0_0_12px_rgba(168,85,247,0.55)]' : 'text-[#A855F7]'}`} />
@@ -272,7 +328,7 @@ export default function App() {
 
       {/* Operation Drawer */}
       <div className="mb-6">
-        <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+        <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
           <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>操作模式</h3>
 
           {/* Mode Tabs */}
@@ -353,9 +409,9 @@ export default function App() {
     const currentWarranty = Math.max(0, Math.floor(18 - (92 - currentHealthScore) * 0.6));
 
     return (
-    <>
-      {/* Health Gauge */}
-      <style>{`
+      <>
+        {/* Health Gauge */}
+        <style>{`
         @keyframes barGrow {
           from { height: 0; opacity: 0; }
           to { opacity: 1; }
@@ -365,150 +421,150 @@ export default function App() {
           50% { filter: drop-shadow(0 0 15px rgba(225, 179, 108, 0.8)); }
         }
       `}</style>
-      <div className="mb-6">
-        <div className="relative bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-visible">
-          <div className="pointer-events-none absolute -top-14 -left-8 w-40 h-40 bg-[#0A78F5]/10 blur-[80px] rounded-full"></div>
-
-          <div className="relative text-center">
-            <h3 className="text-[#A1A1AA] font-bold mb-3" style={{ fontSize: '14px', letterSpacing: '0.2em' }}>健康分數</h3>
-
-            {/* Semi-circular gauge */}
-            <div className="w-64 h-48 mx-auto mb-8">
-              <svg viewBox="0 0 200 100" className="w-full h-full">
-                <path
-                  d="M 20 90 A 80 80 0 0 1 180 90"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.03)"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 20 90 A 80 80 0 0 1 180 90"
-                  fill="none"
-                  stroke="url(#gaugeGradient)"
-                  strokeWidth="14"
-                  strokeLinecap="round"
-                  strokeDasharray="251.2"
-                  style={{ 
-                    strokeDashoffset: dashOffset,
-                    transition: 'stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    filter: 'drop-shadow(0 0 8px rgba(225, 179, 108, 0.6))' 
-                  }}
-                />
-                <defs>
-                  <linearGradient id="gaugeGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-                    <stop offset="0%" stopColor="#E1B36C" />
-                    <stop offset="50%" stopColor="#FFF5E6" />
-                    <stop offset="100%" stopColor="#E1B36C" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center translate-y-3 transition-all duration-1000 delay-500">
-                <div className="text-[#FFFFFF] font-bold animate-[pulse_2s_infinite]" style={{ fontSize: '72px', lineHeight: '1', textShadow: '0 0 40px rgba(225,179,108,0.5)' }}>{currentHealthScore}</div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[#A1A1AA] font-medium" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>動態保固狀態</div>
-              <div className="text-[#E1B36C] font-bold flex items-center justify-center gap-2" style={{ fontSize: '16px', filter: 'drop-shadow(0 0 10px #E1B36C)' }}>
-                <Shield className="w-4 h-4" /> 已延長保固+{currentWarranty}個月
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Environmental Threat Card */}
-      {dustRate > 40 && (
         <div className="mb-6">
-          <div className="bg-[#121930]/70 backdrop-blur-xl border-t-2 border-t-[#F87171] border-x border-b border-white/10 rounded-3xl p-5 shadow-[0_0_20px_rgba(248,113,113,0.15)]">
-            <div className="flex items-start gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-[#F87171] flex-shrink-0 mt-1 drop-shadow-[0_0_8px_#F87171]" />
-              <div className="flex-1">
-                <h3 className="text-white font-bold mb-1" style={{ fontSize: '16px' }}>環境威脅偵測</h3>
-                <p className="text-red-400 mb-3" style={{ fontSize: '13px' }}>濾網積塵率過高，請清潔檢查。</p>
+          <div className="relative bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-visible">
+            <div className="pointer-events-none absolute -top-14 -left-8 w-40 h-40 bg-[#0A78F5]/10 blur-[80px] rounded-full"></div>
+
+            <div className="relative text-center">
+              <h3 className="text-[#A1A1AA] font-bold mb-3" style={{ fontSize: '14px', letterSpacing: '0.2em' }}>健康分數</h3>
+
+              {/* Semi-circular gauge */}
+              <div className="w-64 h-48 mx-auto mb-8">
+                <svg viewBox="0 0 200 100" className="w-full h-full">
+                  <path
+                    d="M 20 90 A 80 80 0 0 1 180 90"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.03)"
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 20 90 A 80 80 0 0 1 180 90"
+                    fill="none"
+                    stroke="url(#gaugeGradient)"
+                    strokeWidth="14"
+                    strokeLinecap="round"
+                    strokeDasharray="251.2"
+                    style={{
+                      strokeDashoffset: dashOffset,
+                      transition: 'stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      filter: 'drop-shadow(0 0 8px rgba(225, 179, 108, 0.6))'
+                    }}
+                  />
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+                      <stop offset="0%" stopColor="#E1B36C" />
+                      <stop offset="50%" stopColor="#FFF5E6" />
+                      <stop offset="100%" stopColor="#E1B36C" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center translate-y-3 transition-all duration-1000 delay-500">
+                  <div className="text-[#FFFFFF] font-bold animate-[pulse_2s_infinite]" style={{ fontSize: '72px', lineHeight: '1', textShadow: '0 0 40px rgba(225,179,108,0.5)' }}>{currentHealthScore}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-[#A1A1AA] font-medium" style={{ fontSize: '11px', letterSpacing: '0.1em' }}>動態保固狀態</div>
+                <div className="text-[#E1B36C] font-bold flex items-center justify-center gap-2" style={{ fontSize: '16px', filter: 'drop-shadow(0 0 10px #E1B36C)' }}>
+                  <Shield className="w-4 h-4" /> 已延長保固+{currentWarranty}個月
+                </div>
               </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Guard Action Buttons */}
-      <div className="mb-6">
-        <div className="grid grid-cols-2 gap-4">
-          <button onClick={() => setShowMoldModal(true)} className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-5 transition-all active:scale-95 border-t-2 border-t-[#0A78F5]/50">
-            <div className="flex flex-col items-center gap-3">
-              <Sparkles className="w-10 h-10 text-[#0A78F5] drop-shadow-[0_0_8px_rgba(10,120,245,0.4)]" />
-              <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>抑菌防霉</div>
-              <div className="text-[#A1A1AA] text-center" style={{ fontSize: '11px' }}>啟動深度保養</div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setShowRepairModal(true)}
-            className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-5 transition-all active:scale-95 border-t-2 border-t-[#F87171]/50"
-          >
-            <div className="flex flex-col items-center gap-3">
-              <Wrench className="w-10 h-10 text-[#F87171] drop-shadow-[0_0_8px_rgba(248,113,113,0.4)]" />
-              <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>預警報修</div>
-              <div className="text-red-400 text-center" style={{ fontSize: '12px' }}>申請維修</div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Sensor Grid */}
-      <div className="mb-6">
-        <h3 className="text-[#A1A1AA] font-bold mb-3 px-1" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>即時監測</h3>
-        <div className="grid grid-cols-2 gap-4">
-          {/* Air Quality */}
-          <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wind className="w-4 h-4 text-[#0A78F5]" />
-              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>空氣品質 CO2</span>
-            </div>
-            <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{co2.toFixed(0)}<span className="text-xs ml-1 font-normal opacity-50">ppm</span></div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-[#0A78F5] animate-pulse"></div>
-              <span className="text-[#0A78F5]" style={{ fontSize: '11px' }}>極佳</span>
+        {/* Environmental Threat Card */}
+        {dustRate > 40 && (
+          <div className="mb-6">
+            <div className="bg-[#121930]/10 backdrop-blur-xl border-t-2 border-t-[#F87171] border-x border-b border-white/10 rounded-3xl p-5 shadow-[0_0_20px_rgba(248,113,113,0.15)]">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertTriangle className="w-6 h-6 text-[#F87171] flex-shrink-0 mt-1 drop-shadow-[0_0_8px_#F87171]" />
+                <div className="flex-1">
+                  <h3 className="text-white font-bold mb-1" style={{ fontSize: '16px' }}>環境威脅偵測</h3>
+                  <p className="text-red-400 mb-3" style={{ fontSize: '13px' }}>濾網積塵率過高，請清潔檢查。</p>
+                </div>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Motor Speed */}
-          <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Gauge className="w-4 h-4 text-[#E1B36C]" />
-              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>馬達轉速 RPM</span>
-            </div>
-            <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{rpm}</div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-[#E1B36C] animate-pulse"></div>
-              <span className="text-[#E1B36C]" style={{ fontSize: '11px' }}>正常</span>
-            </div>
-          </div>
+        {/* Guard Action Buttons */}
+        <div className="mb-6">
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => setShowMoldModal(true)} className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-5 transition-all active:scale-95 border-t-2 border-t-[#0A78F5]/50">
+              <div className="flex flex-col items-center gap-3">
+                <Sparkles className="w-10 h-10 text-[#0A78F5] drop-shadow-[0_0_8px_rgba(10,120,245,0.4)]" />
+                <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>抑菌防霉</div>
+                <div className="text-[#A1A1AA] text-center" style={{ fontSize: '11px' }}>啟動深度保養</div>
+              </div>
+            </button>
 
-          {/* Filter Status */}
-          <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-[#E1B36C]" />
-              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>濾網積塵率</span>
-            </div>
-            <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{dustRate.toFixed(0)}<span className="text-sm ml-1">%</span></div>
-            <div className={dustRate > 40 ? "text-red-400" : "text-[#E1B36C]"} style={{ fontSize: '11px' }}>{dustRate > 40 ? '偏高' : '健康'}</div>
-          </div>
-
-          {/* Refrigerant Monitor */}
-          <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-[#0A78F5]" />
-              <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>冷媒狀態</span>
-            </div>
-            <div className="text-[#0A78F5] font-bold mb-1" style={{ fontSize: '20px' }}>安全</div>
-            <div className="text-white/30" style={{ fontSize: '10px' }}>無異常</div>
+            <button
+              onClick={() => setShowRepairModal(true)}
+              className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-5 transition-all active:scale-95 border-t-2 border-t-[#F87171]/50"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <Wrench className="w-10 h-10 text-[#F87171] drop-shadow-[0_0_8px_rgba(248,113,113,0.4)]" />
+                <div className="text-white font-bold text-center" style={{ fontSize: '15px' }}>預警報修</div>
+                <div className="text-red-400 text-center" style={{ fontSize: '12px' }}>申請維修</div>
+              </div>
+            </button>
           </div>
         </div>
-      </div>
-    </>
+
+        {/* Sensor Grid */}
+        <div className="mb-6">
+          <h3 className="text-[#A1A1AA] font-bold mb-3 px-1" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>即時監測</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Air Quality */}
+            <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wind className="w-4 h-4 text-[#0A78F5]" />
+                <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>空氣品質 CO2</span>
+              </div>
+              <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{co2.toFixed(0)}<span className="text-xs ml-1 font-normal opacity-50">ppm</span></div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#0A78F5] animate-pulse"></div>
+                <span className="text-[#0A78F5]" style={{ fontSize: '11px' }}>極佳</span>
+              </div>
+            </div>
+
+            {/* Motor Speed */}
+            <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Gauge className="w-4 h-4 text-[#E1B36C]" />
+                <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>馬達轉速 RPM</span>
+              </div>
+              <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{rpm}</div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#E1B36C] animate-pulse"></div>
+                <span className="text-[#E1B36C]" style={{ fontSize: '11px' }}>正常</span>
+              </div>
+            </div>
+
+            {/* Filter Status */}
+            <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-4 h-4 text-[#E1B36C]" />
+                <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>濾網積塵率</span>
+              </div>
+              <div className="text-[#FFFFFF] font-bold mb-1" style={{ fontSize: '26px' }}>{dustRate.toFixed(0)}<span className="text-sm ml-1">%</span></div>
+              <div className={dustRate > 40 ? "text-red-400" : "text-[#E1B36C]"} style={{ fontSize: '11px' }}>{dustRate > 40 ? '偏高' : '健康'}</div>
+            </div>
+
+            {/* Refrigerant Monitor */}
+            <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="w-4 h-4 text-[#0A78F5]" />
+                <span className="text-[#A1A1AA]" style={{ fontSize: '12px' }}>冷媒狀態</span>
+              </div>
+              <div className="text-[#0A78F5] font-bold mb-1" style={{ fontSize: '20px' }}>安全</div>
+              <div className="text-white/30" style={{ fontSize: '10px' }}>無異常</div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   };
 
@@ -516,7 +572,7 @@ export default function App() {
     <>
       {/* Sub-tab Switcher */}
       <div className="mb-6">
-        <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 flex gap-1 shadow-inner">
+        <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 flex gap-1 shadow-inner">
           <button
             onClick={() => setDashboardSubTab('energy')}
             className={`flex-1 py-2.5 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-2 ${dashboardSubTab === 'energy' ? 'bg-[#0A78F5] text-white shadow-[0_0_15px_rgba(10,120,245,0.4)]' : 'text-[#A1A1AA] hover:text-white/70'}`}
@@ -537,7 +593,7 @@ export default function App() {
       {dashboardSubTab === 'energy' && <>
         {/* Device Management */}
         <div className="mb-6">
-          <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
+          <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
             <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px', letterSpacing: '0.1em' }}>設備管理</h3>
 
             <div className="space-y-4">
@@ -569,7 +625,7 @@ export default function App() {
 
         {/* Energy Analytics */}
         <div className="mb-6">
-          <div className="relative bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl overflow-hidden">
+          <div className="relative bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#E1B36C]/5 blur-[60px] rounded-full"></div>
 
             <div className="relative">
@@ -593,7 +649,7 @@ export default function App() {
 
         {/* Weekly Chart */}
         <div className="mb-6">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 shadow-2xl">
+          <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 shadow-2xl">
             <h3 className="text-[#A1A1AA] font-bold mb-4" style={{ fontSize: '14px' }}>每週使用量</h3>
 
             <div className="h-40 flex items-end justify-between gap-2">
@@ -627,7 +683,7 @@ export default function App() {
 
         {/* AI Copilot */}
         <div className="mb-6">
-          <div className="bg-[#121930]/70 backdrop-blur-xl border-t-2 border-t-[#E1B36C] border-white/10 rounded-3xl p-5 shadow-2xl">
+          <div className="bg-[#121930]/10 backdrop-blur-xl border-t-2 border-t-[#E1B36C] border-white/10 rounded-3xl p-5 shadow-2xl">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 bg-[#E1B36C]/10 border border-[#E1B36C]/30 rounded-full flex items-center justify-center flex-shrink-0">
                 <Bot className="w-6 h-6 text-[#E1B36C] drop-shadow-[0_0_5px_#E1B36C]" />
@@ -660,14 +716,14 @@ export default function App() {
         {/* Schedule Summary */}
         <div className="mb-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center shadow-xl">
+            <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center shadow-xl">
               <div className="text-[#A1A1AA] mb-1" style={{ fontSize: '11px' }}>一般定時</div>
               <div className="font-bold" style={{ fontSize: '22px' }}>
                 <span className="text-[#0A78F5]">2</span>
                 <span className="text-white/40" style={{ fontSize: '13px' }}> / 8 組</span>
               </div>
             </div>
-            <div className="bg-[#121930]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center shadow-xl">
+            <div className="bg-[#121930]/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center shadow-xl">
               <div className="text-[#A1A1AA] mb-1" style={{ fontSize: '11px' }}>週期排程</div>
               <div className="font-bold" style={{ fontSize: '22px' }}>
                 <span className="text-[#E1B36C]">14</span>
@@ -680,7 +736,7 @@ export default function App() {
         {/* Schedule List */}
         <div className="mb-6 space-y-3">
           {scheduleItems.map((item, idx) => (
-            <div key={idx} className="bg-[#121930]/70 backdrop-blur-xl border-l-2 border-l-[#E1B36C] border-white/5 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div key={idx} className="bg-[#121930]/10 backdrop-blur-xl border-l-2 border-l-[#E1B36C] border-white/5 rounded-2xl p-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-[#E1B36C]/10 flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-5 h-5 text-[#E1B36C]" />
@@ -720,7 +776,7 @@ export default function App() {
         <div className="mb-6">
           <button
             onClick={() => setShowAddSchedule(true)}
-            className="w-full bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-2xl py-4 text-[#A1A1AA] font-bold transition-all active:scale-95"
+            className="w-full bg-[#121930]/10 hover:bg-[#121930]/20 border border-dashed border-white/20 rounded-2xl py-4 text-[#A1A1AA] font-bold transition-all active:scale-95"
             style={{ fontSize: '15px' }}
           >
             ＋ 新增排程
@@ -743,11 +799,67 @@ export default function App() {
               background: 'linear-gradient(135deg, #030010 0%, #011f2e 100%)'
             }}
           >
+            <style>{`
+              @keyframes jetStrike {
+                0% { transform: rotate(30deg) translateX(-150%); opacity: 0; }
+                20% { opacity: var(--base-opacity); }
+                80% { opacity: var(--base-opacity); }
+                100% { transform: rotate(30deg) translateX(450%); opacity: 0; }
+              }
+              @keyframes heatFlow {
+                0% { transform: rotate(30deg) translateX(-150%); opacity: 0; }
+                20% { opacity: var(--base-opacity); }
+                80% { opacity: var(--base-opacity); }
+                100% { transform: rotate(30deg) translateX(450%); opacity: 0; }
+              }
+              .streak {
+                position: absolute;
+                height: 8px;
+                background: linear-gradient(90deg, transparent 0%, var(--wind-color-1) 15%, transparent 100%);
+                border-radius: 50%;
+                filter: blur(5px);
+                transform-origin: left center;
+                pointer-events: none;
+              }
+            `}</style>
+
+            {/* Layer 0: Ambient Glow Layer */}
+            <div
+              className="absolute inset-0 pointer-events-none transition-all duration-1000"
+              style={{
+                background: `radial-gradient(circle at 50% 50%, ${airflowConfig.glow}, transparent 70%)`,
+                filter: 'blur(100px)',
+                zIndex: 0
+              }}
+            />
+
+            {/* Layer 1: Airflow Layer */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+              {streakObjects.slice(0, airflowConfig.fan.cnt).map((s) => (
+                <div
+                  key={s.id}
+                  className="streak"
+                  style={{
+                    top: s.top,
+                    left: '-20%', // 確保從視窗外左側起始
+                    width: s.width,
+                    '--base-opacity': airflowConfig.fan.op[0] + s.opScale * (airflowConfig.fan.op[1] - airflowConfig.fan.op[0]),
+                    animationName: airflowConfig.animation,
+                    animationDuration: `${airflowConfig.fan.dur[0] + s.durScale * (airflowConfig.fan.dur[1] - airflowConfig.fan.dur[0])}s`,
+                    animationDelay: `-${s.id * 1.8 + s.durScale * 2}s`, // 規律錯開時間偏移
+                    animationIterationCount: 'infinite',
+                    animationTimingFunction: 'linear',
+                    opacity: 0, // 初始透明，由 Keyframes 控制淡入
+                    '--wind-color-1': airflowConfig.colors[1],
+                  } as any}
+                />
+              ))}
+            </div>
 
             {/* In-App Notification Overlay */}
             {notification && (
               <div className="absolute top-14 left-4 right-4 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-                <div className="bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-start gap-3">
+                <div className="bg-[#1C1C1E]/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#E1B36C]/20 flex items-center justify-center shrink-0">
                     <Sparkles className="w-5 h-5 text-[#E1B36C]" />
                   </div>
@@ -763,7 +875,7 @@ export default function App() {
             {showRepairModal && (
               <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowRepairModal(false)}>
                 <div
-                  className="bg-[#121930] border border-white/20 rounded-3xl p-6 mx-6 shadow-[0_0_50px_rgba(248,113,113,0.3)] w-full max-w-[320px]"
+                  className="bg-[#121930]/80 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 mx-6 shadow-[0_0_50px_rgba(248,113,113,0.3)] w-full max-w-[320px]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-3 mb-4">
@@ -814,12 +926,12 @@ export default function App() {
             {showMoldModal && (
               <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowMoldModal(false)}>
                 <div
-                  className="bg-[#121930] border border-white/20 rounded-3xl p-6 mx-6 shadow-[0_0_50px_rgba(10,120,245,0.3)] w-full max-w-[320px]"
+                  className="bg-[#121930]/80 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 mx-6 shadow-[0_0_50px_rgba(10,120,245,0.3)] w-full max-w-[320px]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-[#0A78F5]/10 border border-[#0A78F5]/30 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-emerald-400" />
+                      <Sparkles className="w-5 h-5 text-[#0A78F5]" />
                     </div>
                     <div>
                       <div className="text-white font-bold" style={{ fontSize: '16px' }}>防霉保養啟動</div>
@@ -829,11 +941,11 @@ export default function App() {
 
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-[#0A78F5]"></div>
                       <span className="text-white" style={{ fontSize: '14px' }}>高溫乾燥 (30 分鐘)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-[#0A78F5]"></div>
                       <span className="text-white" style={{ fontSize: '14px' }}>抑菌風道清潔</span>
                     </div>
                   </div>
@@ -844,7 +956,7 @@ export default function App() {
                         setShowMoldModal(false);
                         setNotification({ title: '保養啟動', body: '防霉保養已啟動，預計執行時間：30 分鐘。' });
                       }}
-                      className="flex-1 bg-emerald-500/80 hover:bg-emerald-500 text-white rounded-2xl py-3 font-bold transition-all active:scale-95 text-xs"
+                      className="flex-1 bg-[#0A78F5]/80 hover:bg-[#0A78F5] text-white rounded-2xl py-3 font-bold transition-all active:scale-95 text-xs"
                     >
                       立即啟動
                     </button>
@@ -863,7 +975,7 @@ export default function App() {
             {showAddSchedule && (
               <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowAddSchedule(false)}>
                 <div
-                  className="w-full bg-[#121930] border-t border-white/20 rounded-t-3xl p-6 shadow-2xl"
+                  className="w-full bg-[#121930]/80 backdrop-blur-2xl border-t border-white/20 rounded-t-3xl p-6 shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5"></div>
@@ -971,9 +1083,9 @@ export default function App() {
 
             {/* Status Bar Space */}
             {/* Status Bar Space / Dynamic Island Area */}
-            <div className="h-12 bg-[#041432]"></div>
+            <div className="sticky h-12 bg-[#041432] z-[60]"></div>
             {/* Top Bar Header - Fixed */}
-            <div className="sticky top-0 z-[60] flex items-center justify-between px-6 py-3 bg-[#041432] border-b border-white/5 shadow-md">
+            <div className="sticky top-0 z-[60] flex items-center justify-between px-6 py-3 bg-[#041432] backdrop-blur-md border-b border-white/5 shadow-md">
               <div className="flex items-center gap-2">
                 <img src={airmonLogo} alt="AIRMON" className="h-7 object-contain" />
               </div>
@@ -988,11 +1100,11 @@ export default function App() {
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-24">
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-24 relative z-10">
               {/* Compact Status Banner - Only in Remote Tab */}
               <div className="mb-6">
                 {activeTab === 'remote' && (
-                  <div className="flex items-center justify-between bg-[#121930]/40 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 shadow-inner">
+                  <div className="flex items-center justify-between bg-[#121930]/10 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 shadow-inner">
                     <div className="flex items-center gap-2.5">
                       <div className="relative">
                         <Shield className="w-5 h-5 text-[#0A78F5]" />
@@ -1010,7 +1122,7 @@ export default function App() {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="absolute bottom-0 left-0 right-0">
+            <div className="absolute bottom-0 left-0 right-0 z-[60]">
               <div className="bg-[#0D121F]/95 backdrop-blur-3xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
                 <div className="grid grid-cols-3 px-4 pt-2 pb-4">
                   <button
