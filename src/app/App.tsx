@@ -164,8 +164,8 @@ export default function App() {
 
   const operationModes = [
     { icon: <RotateCcw className="w-5 h-5" />, label: '自動', fanDefault: 3, tempDefault: 26, ticks: ['弱', '中', '強', '自動'], getLabel: (v: number) => ['弱', '中', '強', 'AI'][v] },
-    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 2, tempDefault: 24, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
-    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 1, tempDefault: 30, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
+    { icon: <Snowflake className="w-5 h-5" />, label: '冷房', fanDefault: 0, tempDefault: 24, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
+    { icon: <Sun className="w-5 h-5" />, label: '暖房', fanDefault: 0, tempDefault: 30, ticks: ['弱', '中', '強'], getLabel: (v: number) => ['弱', '中', '強'][v] },
     { icon: <Droplets className="w-5 h-5" />, label: '除濕', fanDefault: 0, tempDefault: 27, ticks: ['弱', '中'], getLabel: (v: number) => ['弱', '中'][v] },
     { icon: <Wind className="w-5 h-5" />, label: '送風', fanDefault: 1, tempDefault: 26, ticks: ['弱', '中', '強', '自動'], getLabel: (v: number) => ['弱', '中', '強', 'AI'][v] },
   ];
@@ -379,7 +379,7 @@ export default function App() {
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#0A78F5] to-[#E1B36C] rounded-full transition-all shadow-[0_0_10px_#0A78F5]"
-                  style={{ width: `${(fanSpeed / (operationModes[activeOperationMode].ticks.length - 1)) * 100}%` }}
+                  style={{ width: `${15 + (fanSpeed / (operationModes[activeOperationMode].ticks.length - 1)) * 85}%` }}
                 ></div>
               </div>
               <input
